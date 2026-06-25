@@ -385,5 +385,4 @@ Tệp prototype tương tác hoàn chỉnh: [lab_day21.html](file:///e:/AI20K/La
 ---
 
 # Day21-2A202600632-VuHaiDuong
-#   D a y 2 1 - 2 A 2 0 2 6 0 0 6 3 2 - V u H a i D u o n g  
- 
+#
