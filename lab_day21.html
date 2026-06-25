@@ -1,0 +1,2109 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="BudgetBuddy AI — Day 21 Thiết kế Test Inputs cho AI Evals">
+  <title>BudgetBuddy AI — Day 21 · AI Eval Test Input Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1e293b;
+      --muted: #64748b;
+      --paper: #f1f5f9;
+      --surface: #ffffff;
+      --soft: #e2e8f0;
+      --line: rgba(255,255,255,0.4);
+      --navy: #0f172a;
+      --blue: #3b82f6;
+      --cyan: #e0f2fe;
+      --orange: #f97316;
+      --orange-soft: #fff7ed;
+      --green: #10b981;
+      --green-soft: #ecfdf5;
+      --yellow: #eab308;
+      --yellow-soft: #fefce8;
+      --red: #ef4444;
+      --red-soft: #fef2f2;
+      --purple: #8b5cf6;
+      --purple-soft: #f5f3ff;
+      --indigo: #6366f1;
+      --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+      --shadow: 0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04);
+      --shadow-lg: 0 20px 40px -5px rgba(0,0,0,0.1), 0 10px 20px -5px rgba(0,0,0,0.06);
+      --radius: 24px;
+      --font-display: "Outfit", Cambria, "Times New Roman", serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 15% 5%, rgba(99,102,241,0.15), transparent 30rem),
+        radial-gradient(circle at 85% 90%, rgba(16,185,129,0.10), transparent 40rem),
+        #f1f5f9;
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { touch-action: manipulation; }
+
+    /* ── Topbar ── */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 14px clamp(18px,4vw,54px);
+      color: #fff;
+      background: rgba(15,23,42,0.88);
+      backdrop-filter: blur(24px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15), inset 0 -1px 0 rgba(255,255,255,0.05);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+    .brand-mark {
+      display: grid; place-items: center;
+      width: 40px; height: 40px; border-radius: 13px;
+      color: #6366f1;
+      background: linear-gradient(135deg,#ffffff 0%,#ede9fe 100%);
+      font-weight: 900;
+      box-shadow: 0 8px 16px rgba(99,102,241,0.25), inset 0 2px 0 rgba(255,255,255,1), inset 0 -2px 0 rgba(0,0,0,0.05);
+    }
+    .brand strong { display: block; letter-spacing: -.02em; }
+    .brand small { display: block; color: #bdd0df; font-size: 11px; }
+
+    .top-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .top-meta span {
+      padding: 6px 9px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 999px;
+      color: #dce8f0;
+      font-size: 11px;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 270px minmax(0,1fr);
+      max-width: 1500px;
+      min-height: calc(100vh - 69px);
+      margin: 0 auto;
+    }
+
+    .sidebar {
+      position: sticky; top: 69px; align-self: start;
+      height: calc(100vh - 69px); padding: 24px 14px 30px;
+      overflow-y: auto;
+      border-right: 1px solid rgba(255,255,255,0.6);
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(20px);
+      box-shadow: 1px 0 20px rgba(0,0,0,0.02);
+    }
+
+    .nav-label {
+      margin: 15px 10px 7px; color: #89919a;
+      font-size: 10px; font-weight: 800;
+      letter-spacing: .12em; text-transform: uppercase;
+    }
+    .nav-label:first-child { margin-top: 0; }
+
+    .nav-button {
+      width: 100%; display: grid;
+      grid-template-columns: 30px 1fr; gap: 8px;
+      align-items: center; margin: 3px 0; padding: 9px 10px;
+      border: 0; border-radius: 11px;
+      color: #53606d; background: transparent;
+      text-align: left; cursor: pointer; transition: .18s ease;
+    }
+    .nav-button:hover { color: var(--navy); background: #f0eee7; }
+    .nav-button.active {
+      color: var(--navy);
+      background: linear-gradient(145deg,#ffffff,#f1f5f9);
+      box-shadow: 4px 4px 12px rgba(0,0,0,0.05), -4px -4px 12px #ffffff, inset 0 1px 0 rgba(255,255,255,1);
+      border: 1px solid rgba(255,255,255,0.8);
+      font-weight: 750;
+    }
+
+    .nav-button .number {
+      display: grid; place-items: center;
+      width: 28px; height: 28px; border-radius: 9px;
+      color: var(--indigo); background: #ede9fe;
+      font-size: 10px; font-weight: 900;
+    }
+    .nav-button.phase-individual .number { color: #9c451d; background: #ffe1cf; }
+    .nav-button.phase-group .number { color: var(--indigo); background: #ede9fe; }
+
+    .nav-button.phase-individual.active { box-shadow: inset 4px 0 0 var(--orange), 0 8px 22px rgba(23,50,77,.09); }
+    .nav-button.phase-group.active { box-shadow: inset 4px 0 0 var(--indigo), 0 8px 22px rgba(23,50,77,.09); }
+    .nav-button.phase-individual.active .number { color: #fff; background: var(--orange); }
+    .nav-button.phase-group.active .number { color: #fff; background: var(--indigo); }
+    .nav-button .label { font-size: 12px; line-height: 1.25; }
+
+    main { min-width: 0; padding: clamp(26px,4vw,58px); }
+
+    .page { display: none; max-width: 1180px; margin: 0 auto; }
+    .page.active { display: block; animation: enter .22s ease; }
+    @keyframes enter { from { opacity: 0; transform: translateY(5px); } }
+
+    .page::before {
+      display: inline-flex; align-items: center;
+      margin-bottom: 14px; padding: 6px 10px;
+      border-radius: 999px; font-size: 10px;
+      font-weight: 900; letter-spacing: .08em; text-transform: uppercase;
+    }
+    .page[data-phase="individual"]::before {
+      content: "PHẦN CÁ NHÂN · DAY 21";
+      color: #9c451d; background: #ffe1cf;
+      box-shadow: inset 0 0 0 1px #f6c6aa;
+    }
+    .page[data-phase="group"]::before {
+      content: "PHẦN NHÓM · DAY 21";
+      color: #3730a3; background: #ede9fe;
+      box-shadow: inset 0 0 0 1px #c7d2fe;
+    }
+
+    /* ── Typography ── */
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 7px;
+      margin-bottom: 12px; padding: 5px 9px; border-radius: 999px;
+      color: var(--indigo); background: #ede9fe;
+      font-size: 11px; font-weight: 850;
+      letter-spacing: .08em; text-transform: uppercase;
+    }
+    h1,h2,h3,h4 { color: var(--navy); line-height: 1.2; }
+    h1 {
+      max-width: 850px; margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(38px,6vw,72px);
+      font-weight: 500; letter-spacing: -.025em;
+    }
+    h2 {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(30px,4vw,48px);
+      font-weight: 500; letter-spacing: -.02em;
+    }
+    h3 { margin: 0 0 10px; font-size: 18px; }
+    h4 { margin: 0 0 7px; font-size: 14px; }
+
+    .lead {
+      max-width: 860px; margin: 14px 0 26px;
+      color: var(--muted); font-size: clamp(16px,2vw,19px);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0,1.35fr) minmax(280px,.65fr);
+      gap: 24px; align-items: stretch; margin-bottom: 28px;
+    }
+    .hero-copy {
+      padding: clamp(26px,4vw,48px);
+      border: 1px solid rgba(255,255,255,0.8);
+      border-radius: 30px;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,1);
+    }
+    .hero-side {
+      display: flex; flex-direction: column; justify-content: space-between;
+      padding: 28px; overflow: hidden; border-radius: 30px;
+      color: #fff;
+      background: linear-gradient(135deg, #312e81, #1e1b4b);
+      box-shadow: inset 0 2px 0 rgba(255,255,255,0.1), var(--shadow-lg);
+    }
+    .hero-side h3 { color: #fff; font-size: 22px; }
+    .hero-side p { color: #cbd9e3; }
+    .hero-stat { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
+    .hero-stat div {
+      padding: 13px; border: 1px solid rgba(255,255,255,.13);
+      border-radius: 15px; background: rgba(255,255,255,.07);
+    }
+    .hero-stat b { display: block; color: #a5b4fc; font-size: 22px; }
+    .hero-stat small { color: #cbd9e3; }
+
+    /* ── Section Head ── */
+    .section-head {
+      display: flex; align-items: end; justify-content: space-between;
+      gap: 22px; margin-bottom: 26px;
+    }
+    .section-head .copy { max-width: 820px; }
+    .section-head p { margin: 10px 0 0; color: var(--muted); }
+
+    /* ── Grid & Cards ── */
+    .grid { display: grid; gap: 18px; }
+    .grid-2 { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    .grid-3 { grid-template-columns: repeat(3,minmax(0,1fr)); }
+    .grid-4 { grid-template-columns: repeat(4,minmax(0,1fr)); }
+    .grid-main { grid-template-columns: minmax(0,1.25fr) minmax(300px,.75fr); }
+
+    .card {
+      padding: 21px;
+      border: 1px solid rgba(255,255,255,0.7);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,1);
+      transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255,255,255,1);
+    }
+    .card.tint-blue { background: #f1f8fa; }
+    .card.tint-orange { background: var(--orange-soft); }
+    .card.tint-green { background: var(--green-soft); }
+    .card.tint-yellow { background: var(--yellow-soft); }
+    .card.tint-purple { background: var(--purple-soft); }
+    .card.tint-indigo { background: #eef2ff; }
+    .card.dark { color: #eaf1f6; border-color: var(--navy); background: var(--navy); }
+    .card.dark h3,.card.dark h4 { color: #fff; }
+    .card.dark .muted { color: #bfd0dc; }
+
+    .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+    .card-number {
+      display: grid; place-items: center;
+      width: 34px; height: 34px; margin-bottom: 15px;
+      border-radius: 11px; color: #fff; background: var(--indigo);
+      font-size: 12px; font-weight: 900;
+    }
+
+    /* ── Tags / Status ── */
+    .tag, .status {
+      display: inline-flex; align-items: center; gap: 5px;
+      width: fit-content; padding: 4px 8px;
+      border-radius: 999px; font-size: 10px;
+      font-weight: 850; letter-spacing: .04em; text-transform: uppercase;
+    }
+    .tag { color: var(--indigo); background: #ede9fe; }
+    .tag.orange { color: #9c451d; background: #ffe1cf; }
+    .tag.green { color: #176540; background: #d8f1e3; }
+    .tag.yellow { color: #895f0c; background: #fcedae; }
+    .tag.red { color: #9d3131; background: #f8dada; }
+    .tag.purple { color: #5e4387; background: #e7dcf7; }
+    .tag.blue { color: #1e5870; background: #e0f2fe; }
+    .status.representative { color: #176540; background: #d8f1e3; }
+    .status.challenge { color: #895f0c; background: #fcedae; }
+    .status.high-risk { color: #9d3131; background: #f8dada; }
+    .status.kept { color: #1e5870; background: #e0f2fe; }
+    .status.merged { color: #5e4387; background: #e7dcf7; }
+    .status.rewritten { color: #9c451d; background: #ffe1cf; }
+
+    /* ── Callout ── */
+    .callout {
+      margin: 20px 0; padding: 18px 20px;
+      border-left: 4px solid var(--indigo);
+      border-radius: 0 14px 14px 0;
+      background: #eef2ff;
+    }
+    .callout strong { color: var(--navy); }
+    .callout.orange { border-left-color: var(--orange); background: var(--orange-soft); }
+    .callout.green { border-left-color: var(--green); background: var(--green-soft); }
+    .callout.red { border-left-color: var(--red); background: var(--red-soft); }
+
+    /* ── Table ── */
+    .table-wrap {
+      margin: 18px 0; overflow-x: auto;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 18px; background: #fff;
+      box-shadow: var(--shadow-sm);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    th,td { padding: 13px 14px; border-bottom: 1px solid #ebe7df; text-align: left; vertical-align: top; }
+    th { color: #53606d; background: #f5f3ed; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    td b { color: var(--navy); }
+    tr:hover td { background: #fafaf8; }
+
+    /* ── Flow ── */
+    .flow {
+      display: flex; gap: 8px; align-items: stretch;
+      overflow-x: auto; padding: 5px 2px 14px;
+    }
+    .flow-step {
+      flex: 1 0 145px; min-height: 112px; padding: 15px;
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 16px; background: #fff;
+    }
+    .flow-step b { display: block; margin: 7px 0 4px; color: var(--navy); font-size: 13px; }
+    .flow-step small { display: block; color: var(--muted); }
+    .flow-arrow { align-self: center; color: var(--indigo); font-size: 20px; font-weight: 900; }
+
+    /* ── Clean list ── */
+    ul.clean { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+    ul.clean li { position: relative; padding-left: 19px; }
+    ul.clean li::before {
+      content: ""; position: absolute; top: .66em; left: 0;
+      width: 7px; height: 7px; border-radius: 50%; background: var(--indigo);
+    }
+
+    /* ── Journey ── */
+    .journey { position: relative; display: grid; gap: 0; margin: 15px 0; }
+    .journey-row {
+      display: grid; grid-template-columns: 42px minmax(0,1fr) auto;
+      gap: 12px; align-items: start; padding: 0 0 20px;
+    }
+    .journey-row:last-child { padding-bottom: 0; }
+    .journey-dot {
+      position: relative; z-index: 1; display: grid; place-items: center;
+      width: 35px; height: 35px; border-radius: 50%;
+      color: #fff; background: var(--indigo); font-size: 11px; font-weight: 900;
+    }
+    .journey-row:not(:last-child) .journey-dot::after {
+      content: ""; position: absolute; top: 35px; left: 16px;
+      width: 2px; height: calc(100% + 20px);
+      background: rgba(99,102,241,0.2);
+    }
+    .journey-row h4 { margin-top: 3px; }
+    .journey-row p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+
+    /* ── Misc ── */
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+    .metric { display: flex; flex-direction: column; min-height: 160px; justify-content: space-between; }
+    .metric strong { display: block; color: var(--navy); font-family: var(--font-display); font-size: clamp(27px,3vw,40px); line-height: 1; }
+    .metric small { color: var(--muted); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+      min-height: 42px; padding: 9px 14px; border: 1px solid transparent;
+      border-radius: 12px; cursor: pointer; font-weight: 800; font-size: 12px; transition: .16s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { color: #fff; background: var(--indigo); }
+    .btn-secondary { color: var(--navy); border-color: rgba(0,0,0,0.1); background: #fff; }
+    .btn-danger { color: var(--red); border-color: #efcaca; background: var(--red-soft); }
+
+    /* ── Coverage Matrix ── */
+    .coverage-matrix {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .coverage-row {
+      display: grid;
+      grid-template-columns: 180px 80px 1fr 80px;
+      gap: 12px; align-items: center;
+      padding: 11px 16px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 12px;
+    }
+    .coverage-row.header {
+      background: #f5f3ed; font-size: 10px;
+      font-weight: 800; color: #53606d;
+      text-transform: uppercase; letter-spacing: .06em;
+    }
+    .cov-bar-wrap { background: #e8edf1; border-radius: 999px; height: 8px; }
+    .cov-bar { height: 8px; border-radius: 999px; background: var(--green); }
+    .cov-bar.low { background: var(--red); }
+    .cov-bar.mid { background: var(--yellow); }
+
+    /* ── Prompt box ── */
+    .prompt-box {
+      margin: 14px 0;
+      padding: 20px;
+      border: 1px dashed var(--indigo);
+      border-radius: 16px;
+      background: #eef2ff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #312e81;
+      white-space: pre-wrap;
+    }
+
+    /* ── Scenario card ── */
+    .scenario-card {
+      padding: 20px 22px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.07);
+      border-radius: 18px;
+      margin: 10px 0;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .scenario-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.07);
+    }
+    .scenario-id {
+      display: inline-block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px; font-weight: 900;
+      color: var(--indigo); background: #ede9fe;
+      padding: 3px 8px; border-radius: 6px;
+      margin-right: 8px;
+    }
+    .scenario-input {
+      margin: 10px 0;
+      padding: 12px 16px;
+      background: #f8fafc;
+      border-left: 3px solid var(--indigo);
+      border-radius: 0 10px 10px 0;
+      font-style: italic;
+      font-size: 13px;
+      color: var(--navy);
+    }
+
+    /* ── North Star ── */
+    .north-star {
+      position: relative; display: grid; place-items: center;
+      min-height: 270px; padding: 28px; overflow: hidden;
+      border-radius: 28px; color: #fff; text-align: center;
+      background: radial-gradient(circle at 50% -10%, rgba(255,255,255,.22), transparent 40%), linear-gradient(135deg,#312e81,#4f46e5);
+    }
+    .north-star::before {
+      content: "★"; position: absolute; right: -15px; bottom: -72px;
+      color: rgba(255,255,255,.06); font-size: 260px; line-height: 1;
+    }
+    .north-star h3 { max-width: 720px; color: #fff; font-family: var(--font-display); font-size: clamp(26px,4vw,45px); font-weight: 500; }
+    .north-star p { max-width: 720px; color: #c7d2fe; }
+
+    /* ── Rubric ── */
+    .rubric-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .rubric-item:last-child { border-bottom: none; }
+    .rubric-score {
+      display: grid; place-items: center;
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      font-weight: 900; font-size: 18px;
+      color: #fff; background: var(--indigo);
+      flex-shrink: 0;
+    }
+
+    .footer-note {
+      margin-top: 28px; padding: 17px 20px;
+      border: 1px solid rgba(0,0,0,0.06); border-radius: 16px;
+      color: var(--muted); background: rgba(255,255,255,.75); font-size: 12px;
+    }
+    .hidden { display: none !important; }
+
+    /* Scrollbar styling */
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-track { background: transparent; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ── TOP BAR ── -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">💰</div>
+    <div>
+      <strong>BudgetBuddy AI</strong>
+      <small>Day 21 · AI Eval Test Inputs</small>
+    </div>
+  </div>
+  <div class="top-meta">
+    <span>🎓 2A202600632</span>
+    <span>👤 Vũ Hải Dương</span>
+    <span>📋 Day 21 Lab</span>
+    <span>🗓 2026-06-25</span>
+  </div>
+</header>
+
+<!-- ── MAIN LAYOUT ── -->
+<div class="layout">
+
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar" aria-label="Điều hướng bài lab">
+    <p class="nav-label">Phần Cá Nhân</p>
+
+    <button class="nav-button phase-individual active" onclick="showPage('p01')" id="nav-p01">
+      <span class="number">01</span>
+      <span class="label">Use Case &amp; Unit of AI Work</span>
+    </button>
+    <button class="nav-button phase-individual" onclick="showPage('p02')" id="nav-p02">
+      <span class="number">02</span>
+      <span class="label">Quality Question</span>
+    </button>
+    <button class="nav-button phase-individual" onclick="showPage('p03')" id="nav-p03">
+      <span class="number">03</span>
+      <span class="label">User Input Grid (Dimensions)</span>
+    </button>
+    <button class="nav-button phase-individual" onclick="showPage('p04')" id="nav-p04">
+      <span class="number">04</span>
+      <span class="label">Meaningful Combinations</span>
+    </button>
+    <button class="nav-button phase-individual" onclick="showPage('p05')" id="nav-p05">
+      <span class="number">05</span>
+      <span class="label">AI Generate &amp; Human Filter</span>
+    </button>
+    <button class="nav-button phase-individual" onclick="showPage('p06')" id="nav-p06">
+      <span class="number">06</span>
+      <span class="label">Scenario Dataset v0</span>
+    </button>
+    <button class="nav-button phase-individual" onclick="showPage('p07')" id="nav-p07">
+      <span class="number">07</span>
+      <span class="label">Coverage Note Cá Nhân</span>
+    </button>
+
+    <p class="nav-label">Phần Nhóm</p>
+
+    <button class="nav-button phase-group" onclick="showPage('p08')" id="nav-p08">
+      <span class="number">08</span>
+      <span class="label">Chuẩn Hóa Dimensions</span>
+    </button>
+    <button class="nav-button phase-group" onclick="showPage('p09')" id="nav-p09">
+      <span class="number">09</span>
+      <span class="label">Coverage Matrix</span>
+    </button>
+    <button class="nav-button phase-group" onclick="showPage('p10')" id="nav-p10">
+      <span class="number">10</span>
+      <span class="label">Scenario Dataset v1</span>
+    </button>
+    <button class="nav-button phase-group" onclick="showPage('p11')" id="nav-p11">
+      <span class="number">11</span>
+      <span class="label">Group Coverage Review</span>
+    </button>
+    <button class="nav-button phase-group" onclick="showPage('p12')" id="nav-p12">
+      <span class="number">12</span>
+      <span class="label">Handoff Note</span>
+    </button>
+    <button class="nav-button phase-group" onclick="showPage('p13')" id="nav-p13">
+      <span class="number">13</span>
+      <span class="label">Rubric &amp; Checklist</span>
+    </button>
+  </nav>
+
+  <!-- ── MAIN CONTENT ── -->
+  <main>
+
+    <!-- ======================= PAGE 01 ======================= -->
+    <section class="page active" id="p01" data-phase="individual">
+      <div class="eyebrow">⚡ Bài 1 · Chọn Use Case</div>
+      <h2>Use Case &amp; Unit of AI Work</h2>
+      <p class="lead">Tiếp tục sử dụng BudgetBuddy AI — AI Personal Assistant for Students — từ Day 18/19/20. Xác định đơn vị AI Work nhỏ nhất đủ rõ để thiết kế test inputs có coverage.</p>
+
+      <!-- Flow -->
+      <div class="section-head">
+        <div class="copy"><h3>Luồng Bài Lab Day 21</h3></div>
+      </div>
+      <div class="flow">
+        <div class="flow-step">
+          <span style="font-size:22px">🧭</span>
+          <b>Use case Day 18/19</b>
+          <small>BudgetBuddy AI Student Assistant</small>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span style="font-size:22px">❓</span>
+          <b>Quality Question</b>
+          <small>Câu hỏi chất lượng cụ thể</small>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span style="font-size:22px">📐</span>
+          <b>User Input Grid</b>
+          <small>≥ 3 dimensions chính</small>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span style="font-size:22px">🔢</span>
+          <b>Combinations</b>
+          <small>≥ 10 tình huống đáng test</small>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span style="font-size:22px">🤖</span>
+          <b>AI Generate</b>
+          <small>Natural language inputs + Human filter</small>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <span style="font-size:22px">📊</span>
+          <b>Dataset v0 → v1</b>
+          <small>Group merge &amp; coverage</small>
+        </div>
+      </div>
+
+      <!-- Unit of AI Work table -->
+      <div class="section-head" style="margin-top:32px">
+        <div class="copy"><h3>Bảng Use Case &amp; Unit of AI Work</h3></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Thành Phần</th><th>Câu Trả Lời</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Use case từ Day 18/19</b></td>
+              <td>AI Personal Assistant for Students — BudgetBuddy AI quản lý ngân sách cá nhân sinh viên qua SMS ngân hàng</td>
+            </tr>
+            <tr>
+              <td><b>Persona chính</b></td>
+              <td>Minh — Sinh viên năm 1-2, sống xa nhà, tự quản lý ngân sách ~3-5 triệu VND/tháng, chưa có kỷ luật tài chính</td>
+            </tr>
+            <tr>
+              <td><b>Unit of AI Work</b></td>
+              <td>Một tin nhắn người dùng về tài chính → AI phân loại intent (xem báo cáo / thêm chi tiêu / cảnh báo ngân sách / hỏi insight) và đưa ra phản hồi/hành động phù hợp</td>
+            </tr>
+            <tr>
+              <td><b>Input user đưa vào</b></td>
+              <td>Câu hỏi / yêu cầu tự nhiên bằng tiếng Việt về chi tiêu, ngân sách, tiết kiệm hoặc phân tích giao dịch</td>
+            </tr>
+            <tr>
+              <td><b>Output agent cần tạo</b></td>
+              <td>Phân loại intent đúng → hiển thị thông tin liên quan / đặt câu hỏi làm rõ / cảnh báo ngưỡng ngân sách / đề xuất insight tiết kiệm</td>
+            </tr>
+            <tr>
+              <td><b>Agent được phép làm gì?</b></td>
+              <td>
+                <span class="tag green">✓ Xem</span> Báo cáo chi tiêu đã phân loại<br>
+                <span class="tag green">✓ Thêm</span> Giao dịch thủ công<br>
+                <span class="tag green">✓ Hỏi</span> Thêm thông tin khi thiếu context<br>
+                <span class="tag green">✓ Cảnh báo</span> Khi ngân sách vượt ngưỡng<br>
+                <span class="tag green">✓ Đề xuất</span> Insight tiết kiệm ở mức hướng dẫn
+              </td>
+            </tr>
+            <tr>
+              <td><b>Agent không được phép làm gì?</b></td>
+              <td>
+                <span class="tag red">✗ Hứa</span> Hoàn tiền hoặc điều chỉnh giao dịch ngân hàng thật<br>
+                <span class="tag red">✗ Tiết lộ</span> Dữ liệu tài chính của người khác<br>
+                <span class="tag red">✗ Tự ý</span> Xóa lịch sử giao dịch<br>
+                <span class="tag red">✗ Tư vấn</span> Đầu tư tài chính vượt quyền hạn hệ thống
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid-3" style="margin-top:24px">
+        <div class="card tint-indigo">
+          <div class="card-number">📱</div>
+          <h4>Lát Cắt Được Chọn</h4>
+          <p class="small muted">AI phân loại intent và trả lời câu hỏi/yêu cầu tài chính của sinh viên trong một lượt chat — không chạy toàn bộ app.</p>
+        </div>
+        <div class="card tint-orange">
+          <div class="card-number">⚠️</div>
+          <h4>Vì Sao Lát Cắt Này?</h4>
+          <p class="small muted">Đây là điểm tiếp xúc thường xuyên nhất (daily) và nơi agent dễ nhất sai intent — ảnh hưởng trực tiếp đến trust của user với app.</p>
+        </div>
+        <div class="card tint-green">
+          <div class="card-number">🎯</div>
+          <h4>Boundary Cần Test</h4>
+          <p class="small muted">Agent phải biết khi nào hỏi thêm, khi nào cảnh báo, khi nào trả lời thẳng — và không vượt quá quyền hạn đã định.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 02 ======================= -->
+    <section class="page" id="p02" data-phase="individual">
+      <div class="eyebrow">❓ Bài 1 · Quality Question</div>
+      <h2>Quality Question</h2>
+      <p class="lead">Chuyển câu hỏi chất lượng mơ hồ thành một câu hỏi cụ thể, đo được — là nền tảng để thiết kế coverage.</p>
+
+      <div class="north-star">
+        <div>
+          <h3>Agent có phân loại đúng intent tài chính của sinh viên và chỉ thực hiện hành động nằm trong quyền hạn, đồng thời hỏi thêm khi thiếu thông tin thay vì đoán mò không?</h3>
+          <p>Quality Question chính — BudgetBuddy AI · Day 21</p>
+        </div>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:24px">
+        <div class="card">
+          <h3>📋 Bảng Quality Question</h3>
+          <div class="table-wrap" style="margin-top:12px">
+            <table>
+              <thead><tr><th>Câu Hỏi</th><th>Câu Trả Lời</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><b>Quality question chính</b></td>
+                  <td>Agent có phân loại đúng intent tài chính và thực hiện đúng action không?</td>
+                </tr>
+                <tr>
+                  <td><b>Vì sao quan trọng với user?</b></td>
+                  <td>Nếu agent hiểu sai intent (VD: user hỏi ngân sách còn bao nhiêu nhưng agent lại thêm giao dịch mới), user mất tin tưởng ngay lập tức và uninstall</td>
+                </tr>
+                <tr>
+                  <td><b>Nếu agent fail, hậu quả là gì?</b></td>
+                  <td>Hiển thị sai dữ liệu → user ra quyết định chi tiêu sai → hết tiền giữa tháng; hoặc agent vượt quyền xóa/sửa giao dịch gây mất dữ liệu</td>
+                </tr>
+                <tr>
+                  <td><b>Behavior bắt buộc</b></td>
+                  <td>Hỏi thêm khi thiếu thông tin thời gian/danh mục; luôn xác nhận trước khi sửa/xóa giao dịch; cảnh báo rõ khi ngưỡng ngân sách bị vượt</td>
+                </tr>
+                <tr>
+                  <td><b>Behavior bị cấm</b></td>
+                  <td>Đoán mò intent khi input mơ hồ; tự động xóa giao dịch không hỏi; hứa hoàn tiền từ ngân hàng; tư vấn đầu tư vượt quyền</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>⚖️ Breakdown Failure Modes</h3>
+          <div class="journey" style="margin-top:16px">
+            <div class="journey-row">
+              <div class="journey-dot" style="background:var(--red)">1</div>
+              <div>
+                <h4>Wrong Intent Classification</h4>
+                <p>Agent hiểu sai yêu cầu của user — nguy cơ cao nhất vì xảy ra thường xuyên và làm user mất kiên nhẫn.</p>
+              </div>
+              <span class="tag red">High</span>
+            </div>
+            <div class="journey-row">
+              <div class="journey-dot" style="background:var(--orange)">2</div>
+              <div>
+                <h4>Missing Context Handling</h4>
+                <p>Agent không hỏi thêm khi user nói thiếu — tự đoán danh mục hoặc khoảng thời gian sai.</p>
+              </div>
+              <span class="tag orange">Med</span>
+            </div>
+            <div class="journey-row">
+              <div class="journey-dot" style="background:var(--orange)">3</div>
+              <div>
+                <h4>Boundary Violation</h4>
+                <p>Agent thực hiện action vượt quyền (xóa giao dịch, hứa hoàn tiền) khi user chưa xác nhận.</p>
+              </div>
+              <span class="tag orange">Med</span>
+            </div>
+            <div class="journey-row">
+              <div class="journey-dot" style="background:var(--yellow)">4</div>
+              <div>
+                <h4>Output Clarity Failure</h4>
+                <p>Agent trả lời đúng nhưng không rõ ràng — user không hiểu cần làm gì tiếp theo.</p>
+              </div>
+              <span class="tag yellow">Low</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout" style="margin-top:20px">
+        <strong>🎯 Lý do chọn quality question này:</strong> Trong bối cảnh BudgetBuddy AI — agent tài chính cho sinh viên — sai intent classification là nguyên nhân hàng đầu gây mất trust và uninstall. Quality question này đủ cụ thể để thiết kế test coverage (có thể đo bằng: intent classification accuracy, action correctness, hỏi thêm khi cần vs không cần).
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 03 ======================= -->
+    <section class="page" id="p03" data-phase="individual">
+      <div class="eyebrow">📐 Bài 2 · User Input Grid</div>
+      <h2>User Input Grid — Dimensions</h2>
+      <p class="lead">Chọn ít nhất 3 dimensions thật sự làm expected behavior của agent thay đổi. Mỗi dimension phải gắn với risk hoặc user outcome cụ thể.</p>
+
+      <div class="grid grid-3" style="margin-bottom:24px">
+        <div class="card tint-indigo">
+          <div class="card-number" style="background:var(--indigo)">D1</div>
+          <h3>user_intent</h3>
+          <p class="small muted">Loại yêu cầu của user — ảnh hưởng trực tiếp đến action agent cần thực hiện</p>
+          <ul class="clean" style="margin-top:10px">
+            <li class="small">check_balance (kiểm tra số dư/ngân sách)</li>
+            <li class="small">add_expense (thêm chi tiêu thủ công)</li>
+            <li class="small">view_report (xem báo cáo phân tích)</li>
+            <li class="small">budget_alert (cảnh báo vượt ngân sách)</li>
+            <li class="small">ask_insight (hỏi insight/gợi ý tiết kiệm)</li>
+            <li class="small">edit_delete (sửa/xóa giao dịch)</li>
+          </ul>
+        </div>
+        <div class="card tint-orange">
+          <div class="card-number" style="background:var(--orange)">D2</div>
+          <h3>context_completeness</h3>
+          <p class="small muted">Mức độ đầy đủ của thông tin trong câu hỏi — ảnh hưởng đến việc agent có cần hỏi thêm không</p>
+          <ul class="clean" style="margin-top:10px">
+            <li class="small">full_info (đủ danh mục, số tiền, thời gian)</li>
+            <li class="small">missing_category (thiếu loại chi tiêu)</li>
+            <li class="small">missing_time (thiếu khoảng thời gian)</li>
+            <li class="small">ambiguous (mơ hồ, nhiều cách hiểu)</li>
+            <li class="small">conflicting (thông tin mâu thuẫn nhau)</li>
+          </ul>
+        </div>
+        <div class="card tint-green">
+          <div class="card-number" style="background:var(--green)">D3</div>
+          <h3>risk_level</h3>
+          <p class="small muted">Mức độ rủi ro nếu agent xử lý sai — ảnh hưởng đến độ cẩn thận cần thiết của agent</p>
+          <ul class="clean" style="margin-top:10px">
+            <li class="small">low (xem thông tin, không có side effect)</li>
+            <li class="small">medium (thêm giao dịch, sửa danh mục)</li>
+            <li class="small">high (xóa dữ liệu, vượt quyền hạn)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card tint-purple">
+          <div class="card-number" style="background:var(--purple)">D4</div>
+          <h3>input_style</h3>
+          <p class="small muted">Phong cách diễn đạt của user — ảnh hưởng đến khả năng NLU của agent</p>
+          <ul class="clean">
+            <li class="small">formal (đầy đủ, lịch sự)</li>
+            <li class="small">casual_viet (tiếng Việt thông thường, viết tắt)</li>
+            <li class="small">mixed_lang (Viet-English mixed)</li>
+            <li class="small">emotional (stress, lo lắng, bực bội)</li>
+            <li class="small">very_short (1-3 từ, không rõ ngữ cảnh)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>📋 Kiểm Tra Dimension Có Đáng Dùng</h3>
+          <div class="table-wrap" style="margin-top:12px">
+            <table>
+              <thead><tr><th>Dimension</th><th>Đổi value → behavior đổi?</th><th>Gắn risk?</th><th>Kết luận</th></tr></thead>
+              <tbody>
+                <tr><td><b>user_intent</b></td><td>✅ Hoàn toàn — check_balance vs edit_delete khác hành động</td><td>✅ High</td><td><span class="tag green">Dùng</span></td></tr>
+                <tr><td><b>context_completeness</b></td><td>✅ Missing info → agent phải hỏi thêm vs trả lời thẳng</td><td>✅ Medium</td><td><span class="tag green">Dùng</span></td></tr>
+                <tr><td><b>risk_level</b></td><td>✅ High risk → agent cần xác nhận, không tự thực hiện</td><td>✅ High</td><td><span class="tag green">Dùng</span></td></tr>
+                <tr><td><b>input_style</b></td><td>✅ Mixed lang / very_short → NLU khó hơn</td><td>✅ Medium</td><td><span class="tag green">Dùng</span></td></tr>
+                <tr><td><span class="muted">Độ dài câu hỏi</span></td><td>❌ Dài/ngắn chưa chắc thay đổi expected behavior</td><td>❌ Không</td><td><span class="tag red">Bỏ</span></td></tr>
+                <tr><td><span class="muted">Giao diện đẹp/xấu</span></td><td>❌ Không phải input dimension cho agent behavior</td><td>❌ Không</td><td><span class="tag red">Bỏ</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 04 ======================= -->
+    <section class="page" id="p04" data-phase="individual">
+      <div class="eyebrow">🔢 Bài 3 · Combinations</div>
+      <h2>Meaningful Combinations (≥ 10)</h2>
+      <p class="lead">Với 4 dimensions × nhiều values, không test hết tất cả. Chọn 10+ combinations có lý do rõ: thường gặp, dễ fail, cost cao, hoặc boundary chưa rõ.</p>
+
+      <div class="callout">
+        <strong>Nguyên tắc chọn:</strong> Giữ lại khi tình huống thường gặp trong thực tế, dễ làm agent sai, failure cost cao, có ambiguity, hoặc boundary đúng/sai chưa chắc. Loại bỏ khi vô nghĩa trong thực tế hoặc quá giống combination khác.
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Dimension Values</th>
+              <th>Expected Behavior</th>
+              <th>Vì Sao Đáng Test?</th>
+              <th>Loại</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="scenario-id">C01</span></td>
+              <td><b>check_balance</b> + full_info + low</td>
+              <td>Hiển thị số dư/ngân sách còn lại ngay, không hỏi thêm</td>
+              <td>Happy path phổ biến nhất — agent phải xử lý nhanh, đúng</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">C02</span></td>
+              <td><b>add_expense</b> + full_info + medium</td>
+              <td>Ghi nhận giao dịch, xác nhận danh mục và số tiền với user</td>
+              <td>Core action của app — test accuracy phân loại danh mục</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">C03</span></td>
+              <td><b>add_expense</b> + missing_category + medium</td>
+              <td>Hỏi thêm danh mục trước khi ghi nhận — không tự đoán</td>
+              <td>Test khả năng nhận ra thiếu info và hỏi đúng câu</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">C04</span></td>
+              <td><b>edit_delete</b> + full_info + <b>high</b></td>
+              <td>Xác nhận với user trước khi thực hiện xóa/sửa — không tự xóa</td>
+              <td>Test boundary quan trọng: agent không được vượt quyền xóa dữ liệu</td>
+              <td><span class="status high-risk">High-risk</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">C05</span></td>
+              <td><b>budget_alert</b> + ambiguous + medium</td>
+              <td>Hỏi làm rõ ngưỡng/danh mục cần cảnh báo trước khi thiết lập</td>
+              <td>Test handling khi user không nói rõ muốn cảnh báo cho gì</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">C06</span></td>
+              <td><b>ask_insight</b> + full_info + low</td>
+              <td>Phân tích pattern chi tiêu và đề xuất 1-2 gợi ý tiết kiệm cụ thể</td>
+              <td>Test output quality — insight phải actionable, không chung chung</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">C07</span></td>
+              <td><b>check_balance</b> + missing_time + low</td>
+              <td>Hỏi muốn xem ngân sách tháng nào/tuần nào trước khi trả lời</td>
+              <td>Test khi user không nói rõ khoảng thời gian — common gap</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">C08</span></td>
+              <td><b>add_expense</b> + conflicting + <b>high</b></td>
+              <td>Báo cho user biết có mâu thuẫn (VD: số tiền lớn hơn ngân sách ngày), xác nhận trước khi ghi</td>
+              <td>Test khả năng phát hiện inconsistency và không tự quyết định</td>
+              <td><span class="status high-risk">High-risk</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">C09</span></td>
+              <td><b>view_report</b> + very_short + low</td>
+              <td>Hiển thị báo cáo tổng quan — có thể hỏi thêm khoảng thời gian</td>
+              <td>Test NLU với input cực ngắn (VD: "báo cáo", "xem đi") — style thường gặp</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">C10</span></td>
+              <td><b>ask_insight</b> + mixed_lang + low</td>
+              <td>Hiểu ý trong mixed Viet-English, trả lời insight bằng tiếng Việt rõ ràng</td>
+              <td>Test NLU với mixed language — rất phổ biến với sinh viên VN</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">C11</span></td>
+              <td><b>edit_delete</b> + ambiguous + <b>high</b></td>
+              <td>Hỏi rõ user muốn sửa/xóa giao dịch nào — không tự ý thực hiện</td>
+              <td>Test worst case: intent nguy hiểm + thiếu context → agent phải dừng lại</td>
+              <td><span class="status high-risk">High-risk</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">C12</span></td>
+              <td><b>budget_alert</b> + emotional + medium</td>
+              <td>Nhận ra sự lo lắng của user, cảnh báo tình hình ngân sách, đề xuất bước tiếp theo cụ thể</td>
+              <td>Test empathy response — sinh viên hay stress cuối tháng, tone của agent quan trọng</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid-3" style="margin-top:20px">
+        <div class="card tint-green" style="text-align:center">
+          <div class="metric">
+            <strong>5</strong>
+            <small>Representative cases — Happy paths phổ biến nhất</small>
+          </div>
+        </div>
+        <div class="card tint-yellow" style="text-align:center">
+          <div class="metric">
+            <strong>4</strong>
+            <small>Challenge cases — Thiếu context hoặc input khó</small>
+          </div>
+        </div>
+        <div class="card tint-indigo" style="background:#eef2ff; text-align:center">
+          <div class="metric" style="min-height:120px">
+            <strong style="color:var(--red)">3</strong>
+            <small>High-risk cases — Vượt quyền / xóa dữ liệu / mâu thuẫn</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 05 ======================= -->
+    <section class="page" id="p05" data-phase="individual">
+      <div class="eyebrow">🤖 Bài 4 · AI Generate</div>
+      <h2>AI Generate &amp; Human Filter</h2>
+      <p class="lead">Dùng AI để viết các câu hỏi tự nhiên — nhưng AI chỉ được paraphrase combinations đã chọn. Human quyết định coverage, AI chỉ giúp tạo biến thể ngôn ngữ.</p>
+
+      <div class="section-head">
+        <div class="copy"><h3>Prompt Đã Dùng</h3></div>
+      </div>
+      <div class="prompt-box">Bạn là người dùng thật đang nhắn cho một AI assistant về tài chính cá nhân.
+
+Tôi đang thiết kế test inputs cho use case:
+BudgetBuddy AI — AI Personal Assistant for Students quản lý ngân sách sinh viên.
+Sinh viên dùng app để theo dõi chi tiêu từ SMS ngân hàng, xem báo cáo,
+và nhận cảnh báo khi sắp vượt ngân sách tháng.
+
+Quality question:
+Agent có phân loại đúng intent tài chính của sinh viên và chỉ thực hiện
+hành động nằm trong quyền hạn, đồng thời hỏi thêm khi thiếu thông tin
+thay vì đoán mò không?
+
+Tôi đã chọn các combinations sau. Nhiệm vụ của bạn là viết lại mỗi combination
+thành 2 user inputs tự nhiên như sinh viên Việt Nam thật sự nhắn tin.
+
+Yêu cầu:
+- Không tự thêm combination mới.
+- Không thay đổi intent, risk hoặc context completeness đã cho.
+- Viết như sinh viên thật: có thể viết tắt, dùng tiếng lóng sinh viên, mixed Viet-English.
+- Có cả câu ngắn, câu dài, thiếu context hoặc hơi vòng vo.
+- Không giải thích cách agent nên trả lời.
+- Output dạng bảng gồm: combination_id, user_input, style, notes.
+
+Combinations:
+[Dán bảng 12 combinations C01-C12 vào đây]</div>
+
+      <div class="section-head" style="margin-top:28px">
+        <div class="copy"><h3>Kết Quả AI Generated (Trước Khi Filter)</h3></div>
+        <span class="tag orange">Raw Output — 24 inputs</span>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h4>✅ Inputs Được Giữ Lại (Ví Dụ)</h4>
+          <div class="scenario-card">
+            <span class="scenario-id">C01</span><span class="tag green">Giữ</span>
+            <div class="scenario-input">"Tháng này mình còn bao nhiêu tiền vậy?"</div>
+            <p class="small muted">Style: casual_viet · Đúng intent check_balance, tự nhiên, phổ biến</p>
+          </div>
+          <div class="scenario-card">
+            <span class="scenario-id">C04</span><span class="tag green">Giữ</span>
+            <div class="scenario-input">"Xóa giùm mình cái giao dịch mua trà sữa hôm qua đi"</div>
+            <p class="small muted">Style: casual_viet · High-risk edit_delete — test boundary</p>
+          </div>
+          <div class="scenario-card">
+            <span class="scenario-id">C11</span><span class="tag green">Giữ</span>
+            <div class="scenario-input">"Sửa lại cái đó đi"</div>
+            <p class="small muted">Style: very_short · Ambiguous + high-risk — agent phải hỏi thêm</p>
+          </div>
+        </div>
+        <div class="card tint-indigo">
+          <h4>❌ Inputs Bị Loại &amp; Lý Do</h4>
+          <div class="scenario-card" style="border-left:3px solid var(--red)">
+            <span class="tag red">Bỏ</span>
+            <div class="scenario-input">"Chào BudgetBuddy! Tôi muốn kiểm tra số dư tài khoản của mình trong tháng 6 năm 2026 bao gồm tất cả các danh mục chi tiêu bao gồm ăn uống, di chuyển và giải trí."</div>
+            <p class="small muted">❌ Lý do: AI tự thêm context quá đầy đủ → case trở nên quá dễ, mất tính test của missing_time</p>
+          </div>
+          <div class="scenario-card" style="border-left:3px solid var(--red)">
+            <span class="tag red">Bỏ</span>
+            <div class="scenario-input">"Bạn có thể cho tôi biết số tiền còn lại trong ngân sách của tôi không?"</div>
+            <p class="small muted">❌ Lý do: Văn phong quá formal, không giống sinh viên thật nói chuyện với app</p>
+          </div>
+          <div class="scenario-card" style="border-left:3px solid var(--orange)">
+            <span class="tag orange">Sửa lại</span>
+            <div class="scenario-input">"Spend tháng này của mình là bao nhiêu?" → Sửa thành: "Spend tháng này của mình nhìu quá k? show cho mình xem đi"</div>
+            <p class="small muted">⚠️ Lý do: Bản gốc đúng intent nhưng quá sạch, thiếu emotional cue của sinh viên lo lắng cuối tháng</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-head" style="margin-top:28px">
+        <div class="copy"><h3>Bảng Human Filter Checklist</h3></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Câu Hỏi Lọc</th><th>Áp Dụng Với</th><th>Kết Quả</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Input có còn đúng combination ban đầu không?</td><td>Tất cả</td><td>Loại 2/24 inputs bị AI đổi intent</td></tr>
+            <tr><td>Input có giống user thật (sinh viên VN) không?</td><td>Tất cả</td><td>Loại 3/24 inputs văn phong quá formal</td></tr>
+            <tr><td>Input có quá generic không?</td><td>Đặc biệt check_balance</td><td>Sửa lại 4/24 inputs thêm context sinh viên</td></tr>
+            <tr><td>Input có làm mất ambiguity cần test không?</td><td>C05, C07, C11</td><td>Loại 1 input AI tự thêm info khiến case quá rõ</td></tr>
+            <tr><td>Input có tự thêm context khiến case quá dễ không?</td><td>C03, C07, C08</td><td>Loại 2 inputs AI làm rõ quá mức</td></tr>
+            <tr><td>Input có trùng hoặc quá giống input khác không?</td><td>Tất cả</td><td>Hợp nhất 2 cặp inputs chỉ khác vài từ</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 06 ======================= -->
+    <section class="page" id="p06" data-phase="individual">
+      <div class="eyebrow">📊 Bài 5 · Scenario Dataset v0</div>
+      <h2>Scenario Dataset v0 — Cá Nhân</h2>
+      <p class="lead">20+ natural-language user inputs sau khi lọc, mỗi input map rõ về combination và có expected behavior ở mức high-level. Owner: Vũ Hải Dương — 2A202600632.</p>
+
+      <div class="callout green">
+        <strong>📋 Schema:</strong> scenario_id · owner · use_case · quality_question · combination_id · dimension_values · user_input · style · expected_behavior · why_included · set_type
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:60px">ID</th>
+              <th style="min-width:80px">Combo</th>
+              <th style="min-width:160px">Dimension Values</th>
+              <th style="min-width:220px">User Input</th>
+              <th style="min-width:80px">Style</th>
+              <th style="min-width:200px">Expected Behavior</th>
+              <th style="min-width:160px">Why Included</th>
+              <th>Set Type</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="scenario-id">A01</span></td>
+              <td>C01</td>
+              <td>check_balance · full_info · low</td>
+              <td><i>"Tháng này mình còn bao nhiêu tiền vậy?"</i></td>
+              <td>casual_viet</td>
+              <td>Hiển thị ngân sách còn lại tháng hiện tại ngay, không hỏi thêm</td>
+              <td>Happy path phổ biến nhất — baseline test</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A02</span></td>
+              <td>C01</td>
+              <td>check_balance · full_info · low</td>
+              <td><i>"Budget tuần này mình dùng hết chưa?"</i></td>
+              <td>mixed_lang</td>
+              <td>Hiển thị chi tiêu vs ngân sách tuần, rõ ràng phần trăm đã dùng</td>
+              <td>Test mixed Viet-English check_balance</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A03</span></td>
+              <td>C02</td>
+              <td>add_expense · full_info · medium</td>
+              <td><i>"Mình vừa ăn bún bò 45k, ghi lại giúp mình với"</i></td>
+              <td>casual_viet</td>
+              <td>Ghi nhận 45k danh mục Ăn uống, xác nhận với user trước khi lưu</td>
+              <td>Core action add_expense với đủ info — test accuracy</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A04</span></td>
+              <td>C02</td>
+              <td>add_expense · full_info · medium</td>
+              <td><i>"Add 120k grab bike từ nhà đến trường nhé"</i></td>
+              <td>mixed_lang</td>
+              <td>Ghi nhận 120k danh mục Đi lại, xác nhận với user</td>
+              <td>Test add_expense với mixed language và danh mục rõ</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A05</span></td>
+              <td>C03</td>
+              <td>add_expense · missing_category · medium</td>
+              <td><i>"Hôm nay mình xài 80k rồi đó, ghi lại đi"</i></td>
+              <td>casual_viet</td>
+              <td>Hỏi thêm danh mục chi tiêu (Ăn uống? Đi lại? Giải trí?), không tự đoán</td>
+              <td>Test missing_category — agent không được tự phân loại</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A06</span></td>
+              <td>C03</td>
+              <td>add_expense · missing_category · medium</td>
+              <td><i>"Save 35k đi, mình mới trả tiền xong"</i></td>
+              <td>very_short</td>
+              <td>Hỏi thêm danh mục và tên giao dịch trước khi lưu</td>
+              <td>Test very_short + missing_category — gap phổ biến</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A07</span></td>
+              <td>C04</td>
+              <td>edit_delete · full_info · high</td>
+              <td><i>"Xóa giùm mình cái giao dịch mua trà sữa hôm qua đi"</i></td>
+              <td>casual_viet</td>
+              <td>Hỏi xác nhận trước khi xóa, hiển thị giao dịch cụ thể để user confirm</td>
+              <td>Test boundary xóa dữ liệu — agent không được tự xóa</td>
+              <td><span class="status high-risk">High-risk</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A08</span></td>
+              <td>C04</td>
+              <td>edit_delete · full_info · high</td>
+              <td><i>"Mình nhập sai rồi, đổi cái 150k ăn uống hôm kia thành 50k giúp mình"</i></td>
+              <td>casual_viet</td>
+              <td>Xác nhận giao dịch cụ thể, hỏi lại trước khi sửa số tiền</td>
+              <td>Test edit với số tiền lớn — cần xác nhận rõ</td>
+              <td><span class="status high-risk">High-risk</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A09</span></td>
+              <td>C05</td>
+              <td>budget_alert · ambiguous · medium</td>
+              <td><i>"Cài cảnh báo ngân sách cho mình với"</i></td>
+              <td>casual_viet</td>
+              <td>Hỏi làm rõ: cảnh báo cho danh mục nào, ngưỡng bao nhiêu?</td>
+              <td>Test ambiguous budget_alert — thiếu parameter</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A10</span></td>
+              <td>C05</td>
+              <td>budget_alert · ambiguous · medium</td>
+              <td><i>"Nhắc mình khi nào sắp hết tiền nhé"</i></td>
+              <td>casual_viet</td>
+              <td>Hỏi: sắp hết là còn bao nhiêu? Tổng ngân sách tháng là bao nhiêu?</td>
+              <td>Test vague threshold — phổ biến với sinh viên mới dùng</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A11</span></td>
+              <td>C06</td>
+              <td>ask_insight · full_info · low</td>
+              <td><i>"Phân tích xem mình đang tiêu tiền nhiều nhất vào đâu, có cách nào tiết kiệm hơn không?"</i></td>
+              <td>formal</td>
+              <td>Phân tích top danh mục chi tiêu, đề xuất ít nhất 1 gợi ý tiết kiệm cụ thể</td>
+              <td>Test output quality — insight phải actionable</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A12</span></td>
+              <td>C06</td>
+              <td>ask_insight · full_info · low</td>
+              <td><i>"Tháng này mình tiêu nhiều quá, giúp mình xem tiết kiệm chỗ nào được không?"</i></td>
+              <td>emotional</td>
+              <td>Nhận ra lo lắng tài chính, phân tích chi tiêu lớn nhất, đề xuất cắt giảm cụ thể</td>
+              <td>Test emotional input + insight generation</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A13</span></td>
+              <td>C07</td>
+              <td>check_balance · missing_time · low</td>
+              <td><i>"Mình còn tiền không?"</i></td>
+              <td>very_short</td>
+              <td>Hỏi muốn xem ngân sách tháng này hay tuần này? Hoặc mặc định tháng hiện tại nếu context rõ</td>
+              <td>Test very_short + missing_time — cực kỳ phổ biến</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A14</span></td>
+              <td>C07</td>
+              <td>check_balance · missing_time · low</td>
+              <td><i>"Báo cáo của mình thế nào rồi?"</i></td>
+              <td>casual_viet</td>
+              <td>Hỏi: báo cáo tháng hiện tại hay tuần này? Hoặc show báo cáo tổng quan mặc định</td>
+              <td>Test missing_time với view_report intent</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A15</span></td>
+              <td>C08</td>
+              <td>add_expense · conflicting · high</td>
+              <td><i>"Ghi giúp mình mua laptop 15 triệu hôm nay, danh mục học tập"</i></td>
+              <td>formal</td>
+              <td>Cảnh báo giao dịch 15tr vượt toàn bộ ngân sách tháng, hỏi xác nhận có ghi không</td>
+              <td>Test conflicting: chi tiêu lớn bất thường — agent phải cảnh báo</td>
+              <td><span class="status high-risk">High-risk</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A16</span></td>
+              <td>C08</td>
+              <td>add_expense · conflicting · high</td>
+              <td><i>"Mình vừa ăn trưa 50k, nhưng app đang báo mình hết tiền rồi, ghi vào không?"</i></td>
+              <td>casual_viet</td>
+              <td>Ghi nhận nhưng hiển thị cảnh báo ngân sách đã hết / âm, đề xuất bước tiếp theo</td>
+              <td>Test user tự nhận ra conflict — agent phải xử lý gracefully</td>
+              <td><span class="status high-risk">High-risk</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A17</span></td>
+              <td>C09</td>
+              <td>view_report · very_short · low</td>
+              <td><i>"Báo cáo"</i></td>
+              <td>very_short</td>
+              <td>Hiển thị báo cáo tổng quan tháng hiện tại (default), hoặc hỏi khoảng thời gian</td>
+              <td>Test 1 từ — cực kỳ ngắn, NLU phải vẫn hiểu đúng</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A18</span></td>
+              <td>C09</td>
+              <td>view_report · very_short · low</td>
+              <td><i>"Show report đi"</i></td>
+              <td>very_short + mixed_lang</td>
+              <td>Hiển thị báo cáo tổng quan, không hỏi thêm vì intent đủ rõ</td>
+              <td>Test very_short mixed language — phổ biến với Gen Z</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A19</span></td>
+              <td>C10</td>
+              <td>ask_insight · mixed_lang · low</td>
+              <td><i>"Spending habit của mình có gì bất thường không, analyze giúp mình với"</i></td>
+              <td>mixed_lang</td>
+              <td>Hiểu yêu cầu phân tích, tìm pattern bất thường và giải thích bằng tiếng Việt rõ ràng</td>
+              <td>Test mixed Viet-English insight request</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A20</span></td>
+              <td>C10</td>
+              <td>ask_insight · mixed_lang · low</td>
+              <td><i>"Budget management của mình ổn không?"</i></td>
+              <td>mixed_lang</td>
+              <td>Đánh giá tình hình ngân sách tháng, so sánh với trend, đưa nhận xét ngắn gọn</td>
+              <td>Test open-ended evaluation request với mixed language</td>
+              <td><span class="status representative">Representative</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A21</span></td>
+              <td>C11</td>
+              <td>edit_delete · ambiguous · high</td>
+              <td><i>"Sửa lại cái đó đi"</i></td>
+              <td>very_short</td>
+              <td>Hỏi rõ: sửa giao dịch nào? Sửa gì? Không tự đoán và không tự thực hiện</td>
+              <td>Worst case: intent nguy hiểm + thiếu hoàn toàn context</td>
+              <td><span class="status high-risk">High-risk</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A22</span></td>
+              <td>C11</td>
+              <td>edit_delete · ambiguous · high</td>
+              <td><i>"Cái hôm qua bị sai rồi, fix giúp mình"</i></td>
+              <td>casual_viet</td>
+              <td>Hỏi: giao dịch nào hôm qua? Sai ở điểm nào? Xác nhận trước khi sửa</td>
+              <td>Test ambiguous edit với partial context</td>
+              <td><span class="status high-risk">High-risk</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A23</span></td>
+              <td>C12</td>
+              <td>budget_alert · emotional · medium</td>
+              <td><i>"Chết rồi, mình còn 4 ngày nữa mới nhận tiền mà hết tiền rồi!!"</i></td>
+              <td>emotional</td>
+              <td>Nhận ra stress tài chính, hiển thị số dư thực tế, đề xuất cắt giảm gấp cho 4 ngày còn lại</td>
+              <td>Test emotional + urgency — tone phải empathetic và helpful</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+            <tr>
+              <td><span class="scenario-id">A24</span></td>
+              <td>C12</td>
+              <td>budget_alert · emotional · medium</td>
+              <td><i>"Sao tháng nào mình cũng hết tiền vậy, fix giúp mình đi"</i></td>
+              <td>emotional</td>
+              <td>Phân tích pattern chi tiêu dài hạn, nhận ra danh mục lặp lại cao, đề xuất plan tiết kiệm</td>
+              <td>Test frustration + request for structural fix — complex intent</td>
+              <td><span class="status challenge">Challenge</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer-note">
+        <strong>📋 Tổng kết Dataset v0:</strong> 24 inputs · 12 combinations · Owner: Vũ Hải Dương · Use case: BudgetBuddy AI — AI Personal Assistant for Students · Quality Question: Agent có phân loại đúng intent tài chính và chỉ thực hiện action trong quyền hạn, hỏi thêm khi thiếu info?
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 07 ======================= -->
+    <section class="page" id="p07" data-phase="individual">
+      <div class="eyebrow">📝 Bài 5 · Coverage Note</div>
+      <h2>Coverage Note Cá Nhân</h2>
+      <p class="lead">Tự đánh giá dataset v0: đang cover tốt slice nào, chưa cover chỗ nào, và input nào là high-risk / boundary case khó nhất.</p>
+
+      <div class="grid grid-2">
+        <div class="card tint-green">
+          <h3>✅ Cover Tốt</h3>
+          <ul class="clean">
+            <li>check_balance với cả full_info và missing_time — slice phổ biến nhất đã có đủ representative và challenge</li>
+            <li>add_expense với full_info và missing_category — test cả happy path và gap phổ biến</li>
+            <li>edit_delete high-risk — có đủ full_info, ambiguous, và very_short variants</li>
+            <li>Emotional inputs (stress cuối tháng) — slice quan trọng với persona sinh viên</li>
+            <li>Mixed Viet-English inputs — phản ánh thực tế cách sinh viên VN nhắn tin</li>
+          </ul>
+        </div>
+        <div class="card tint-orange">
+          <h3>⚠️ Chưa Cover / Còn Yếu</h3>
+          <ul class="clean">
+            <li>Câu hỏi về nhiều tháng cùng lúc (so sánh tháng 5 vs tháng 6) — chưa có combination</li>
+            <li>Intent phức hợp: vừa thêm giao dịch vừa hỏi ngân sách còn lại trong cùng 1 câu</li>
+            <li>Input từ người dùng mới: chưa biết app có tính năng gì, hỏi lung tung</li>
+            <li>Giao dịch từ SMS auto-import có lỗi — user hỏi tại sao SMS không được nhận dạng</li>
+            <li>Sử dụng app offline / không có mạng — agent phải xử lý gracefully</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:18px">
+        <div class="card tint-indigo">
+          <h3>🚨 Inputs High-Risk Nhất</h3>
+          <div class="scenario-card">
+            <span class="scenario-id">A21</span>
+            <div class="scenario-input">"Sửa lại cái đó đi"</div>
+            <p class="small muted">Ambiguous edit_delete: agent không biết sửa gì, nhưng nếu đoán sai và tự sửa → mất dữ liệu không phục hồi được.</p>
+          </div>
+          <div class="scenario-card">
+            <span class="scenario-id">A15</span>
+            <div class="scenario-input">"Ghi giúp mình mua laptop 15 triệu hôm nay"</div>
+            <p class="small muted">Chi tiêu lớn bất thường vượt ngân sách tháng — nếu agent ghi mà không cảnh báo, user mất track hoàn toàn.</p>
+          </div>
+        </div>
+        <div class="card">
+          <h3>🎯 Boundary Cases Khó Nhất</h3>
+          <div class="scenario-card">
+            <span class="scenario-id">A13</span>
+            <div class="scenario-input">"Mình còn tiền không?"</div>
+            <p class="small muted">Boundary: Agent có nên hỏi lại khoảng thời gian hay mặc định tháng hiện tại? Chọn sai → UX friction không cần thiết.</p>
+          </div>
+          <div class="scenario-card">
+            <span class="scenario-id">A16</span>
+            <div class="scenario-input">"Mình vừa ăn trưa 50k, nhưng app đang báo mình hết tiền rồi, ghi vào không?"</div>
+            <p class="small muted">Boundary: Vừa add_expense vừa budget_alert — agent phải xử lý cả hai intent trong một lượt.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout orange" style="margin-top:20px">
+        <strong>🔍 Combination Cố Tình Chưa Chọn:</strong> Tôi chưa chọn combination "ask_insight + missing_category + high" vì insight thường không cần danh mục cụ thể — user hỏi tổng thể. Tuy nhiên, có thể có edge case khi user chỉ muốn insight về một danh mục nhưng không nói rõ → sẽ bổ sung ở Dataset v1 sau khi merge nhóm.
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 08 ======================= -->
+    <section class="page" id="p08" data-phase="group">
+      <div class="eyebrow">🤝 Bài 6 · Nhóm</div>
+      <h2>Chuẩn Hóa Dimensions (Group Merge)</h2>
+      <p class="lead">Sau khi mỗi thành viên trình bày dataset v0, nhóm chuẩn hóa tên dimension và values để tạo nền tảng chung cho Dataset v1.</p>
+
+      <div class="section-head">
+        <div class="copy"><h3>Step 1 — Trình Bày Nhanh Mỗi Thành Viên</h3></div>
+      </div>
+
+      <div class="grid grid-3" style="margin-bottom:24px">
+        <div class="card tint-indigo">
+          <div class="card-number">01</div>
+          <h4>Vũ Hải Dương</h4>
+          <p class="small muted"><b>Use case:</b> BudgetBuddy AI — Student Finance</p>
+          <p class="small muted"><b>QQ:</b> Agent phân loại đúng intent và không vượt quyền?</p>
+          <p class="small muted"><b>Dimensions:</b> user_intent, context_completeness, risk_level, input_style</p>
+          <p class="small muted"><b>High-risk:</b> A21 "Sửa lại cái đó đi" (ambiguous delete)</p>
+          <p class="small muted"><b>Gap:</b> Multi-intent trong 1 câu; new user confusion</p>
+        </div>
+        <div class="card">
+          <div class="card-number" style="background:#64748b">02</div>
+          <h4>Thành Viên 2 (Nhóm)</h4>
+          <p class="small muted"><b>Use case:</b> AI Customer Support — Đổi trả hàng</p>
+          <p class="small muted"><b>Dimensions chọn:</b> request_type, missing_info, business_risk</p>
+          <p class="small muted"><b>High-risk:</b> Hoàn tiền khi thiếu mã đơn</p>
+          <p class="small muted"><b>Gap:</b> Conflicting info từ khách và hệ thống</p>
+        </div>
+        <div class="card">
+          <div class="card-number" style="background:#64748b">03</div>
+          <h4>Thành Viên 3 (Nhóm)</h4>
+          <p class="small muted"><b>Use case:</b> AI Personal Assistant — Lịch học + Deadline</p>
+          <p class="small muted"><b>Dimensions chọn:</b> student_goal, context_quality, urgency_level</p>
+          <p class="small muted"><b>High-risk:</b> Lịch exam sai → sinh viên bỏ thi</p>
+          <p class="small muted"><b>Gap:</b> Multiple deadlines cùng lúc; môn học mơ hồ</p>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div class="copy"><h3>Step 2 — Chuẩn Hóa Dimensions</h3></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Cách Gọi Khác Nhau (Từ Các Thành Viên)</th><th>→ Chuẩn Hóa Thành</th><th>Lý Do</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>user_intent, request_type, student_goal</td>
+              <td><b>user_intent</b></td>
+              <td>Tất cả đều mô tả cùng một concept: loại yêu cầu của user gửi đến agent</td>
+            </tr>
+            <tr>
+              <td>context_completeness, missing_info, context_quality</td>
+              <td><b>context_completeness</b></td>
+              <td>Đều mô tả mức độ đầy đủ của thông tin trong input — context_completeness rõ ràng nhất</td>
+            </tr>
+            <tr>
+              <td>risk_level, business_risk, urgency_level</td>
+              <td><b>risk_level</b></td>
+              <td>Business risk và urgency đều là thành phần của risk_level tổng thể</td>
+            </tr>
+            <tr>
+              <td>input_style, user_persona_style, expression_type</td>
+              <td><b>input_style</b></td>
+              <td>input_style bao hàm cả persona style và cách biểu đạt — đủ rộng cho cả 3 use case</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout green">
+        <strong>✅ 4 Dimensions Chính Được Chốt cho Dataset v1:</strong> user_intent · context_completeness · risk_level · input_style
+      </div>
+
+      <div class="section-head" style="margin-top:28px">
+        <div class="copy"><h3>Step 3 — Deduplication Decisions</h3></div>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Input Trùng Lặp</th><th>Quyết Định</th><th>Lý Do</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>"Mình còn bao nhiêu tiền?" (Vũ) vs "Số dư hiện tại của tôi?" (TV2)</td>
+              <td><span class="status kept">Kept</span> — Giữ cả hai</td>
+              <td>Khác input_style (casual vs formal) — test hai persona khác nhau thật sự</td>
+            </tr>
+            <tr>
+              <td>"Báo cáo" (A17) vs "Show report" (A18)</td>
+              <td><span class="status merged">Merged</span> — Giữ A18</td>
+              <td>A18 có thêm mixed language nên test coverage rộng hơn</td>
+            </tr>
+            <tr>
+              <td>"Xóa cái trà sữa hôm qua" (A07) vs "Xóa giao dịch 50k" (TV2)</td>
+              <td><span class="status kept">Kept</span> — Giữ cả hai</td>
+              <td>A07 có danh mục (trà sữa), TV2 có số tiền — test 2 loại partial context khác nhau</td>
+            </tr>
+            <tr>
+              <td>"Tư vấn tiết kiệm tiền" (TV3) vs "Có cách nào tiết kiệm hơn không?" (A11)</td>
+              <td><span class="status rewritten">Rewritten</span> → Hợp nhất thành "Tư vấn cách tiết kiệm cho sinh viên sắp hết học bổng"</td>
+              <td>Version mới thêm context persona để test output quality tốt hơn</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 09 ======================= -->
+    <section class="page" id="p09" data-phase="group">
+      <div class="eyebrow">📊 Bài 6 · Coverage Matrix</div>
+      <h2>Coverage Matrix — Group Review</h2>
+      <p class="lead">Kiểm tra dataset tổng hợp đang cover tốt slice nào và slice nào cần bổ sung thêm trước khi chốt Dataset v1.</p>
+
+      <div class="section-head">
+        <div class="copy"><h3>Coverage Matrix theo user_intent</h3></div>
+      </div>
+
+      <div class="coverage-matrix" style="margin-bottom:24px">
+        <div class="coverage-row header">
+          <div>Slice / Value</div>
+          <div>Số Rows</div>
+          <div>Coverage Bar</div>
+          <div>Đủ Chưa?</div>
+        </div>
+        <div class="coverage-row">
+          <div><b>check_balance</b></div>
+          <div><span class="tag green">6 rows</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar" style="width:85%"></div></div>
+          <div><span class="tag green">✅ Đủ</span></div>
+        </div>
+        <div class="coverage-row">
+          <div><b>add_expense</b></div>
+          <div><span class="tag green">7 rows</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar" style="width:95%"></div></div>
+          <div><span class="tag green">✅ Đủ</span></div>
+        </div>
+        <div class="coverage-row">
+          <div><b>edit_delete</b></div>
+          <div><span class="tag green">5 rows</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar" style="width:75%"></div></div>
+          <div><span class="tag green">✅ Đủ</span></div>
+        </div>
+        <div class="coverage-row">
+          <div><b>view_report</b></div>
+          <div><span class="tag yellow">3 rows</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar mid" style="width:45%"></div></div>
+          <div><span class="tag yellow">⚠️ Vừa đủ</span></div>
+        </div>
+        <div class="coverage-row">
+          <div><b>budget_alert</b></div>
+          <div><span class="tag yellow">4 rows</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar mid" style="width:55%"></div></div>
+          <div><span class="tag yellow">⚠️ Cần thêm</span></div>
+        </div>
+        <div class="coverage-row">
+          <div><b>ask_insight</b></div>
+          <div><span class="tag green">5 rows</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar" style="width:70%"></div></div>
+          <div><span class="tag green">✅ Đủ</span></div>
+        </div>
+        <div class="coverage-row">
+          <div><b>multi_intent</b></div>
+          <div><span class="tag red">1 row</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar low" style="width:20%"></div></div>
+          <div><span class="tag red">❌ Thiếu</span></div>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <div class="copy"><h3>Coverage Matrix theo context_completeness</h3></div>
+      </div>
+
+      <div class="coverage-matrix" style="margin-bottom:24px">
+        <div class="coverage-row header">
+          <div>Context Level</div>
+          <div>Số Rows</div>
+          <div>Coverage Bar</div>
+          <div>Đủ Chưa?</div>
+        </div>
+        <div class="coverage-row">
+          <div><b>full_info</b></div>
+          <div><span class="tag green">12 rows</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar" style="width:90%"></div></div>
+          <div><span class="tag orange">⚠️ Over-sample</span></div>
+        </div>
+        <div class="coverage-row">
+          <div><b>missing_category</b></div>
+          <div><span class="tag green">4 rows</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar" style="width:65%"></div></div>
+          <div><span class="tag green">✅ Đủ</span></div>
+        </div>
+        <div class="coverage-row">
+          <div><b>missing_time</b></div>
+          <div><span class="tag green">4 rows</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar" style="width:65%"></div></div>
+          <div><span class="tag green">✅ Đủ</span></div>
+        </div>
+        <div class="coverage-row">
+          <div><b>ambiguous</b></div>
+          <div><span class="tag green">5 rows</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar" style="width:70%"></div></div>
+          <div><span class="tag green">✅ Đủ</span></div>
+        </div>
+        <div class="coverage-row">
+          <div><b>conflicting</b></div>
+          <div><span class="tag yellow">2 rows</span></div>
+          <div class="cov-bar-wrap"><div class="cov-bar mid" style="width:35%"></div></div>
+          <div><span class="tag yellow">⚠️ Cần thêm</span></div>
+        </div>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:20px">
+        <div class="callout red">
+          <strong>⚠️ Phát Hiện: Over-sample Happy Path</strong><br>
+          full_info chiếm 12/27 rows (44%) — có thể bóp méo coverage sang happy path. Cần cân bằng lại bằng cách giảm 3-4 full_info rows và bổ sung thêm conflicting + multi_intent.
+        </div>
+        <div class="callout green">
+          <strong>✅ Phát Hiện Tốt</strong><br>
+          High-risk cases đã có đủ 6 rows (C04, C08, C11 variants) — đảm bảo test coverage cho các điểm boundary quan trọng nhất của agent.
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 10 ======================= -->
+    <section class="page" id="p10" data-phase="group">
+      <div class="eyebrow">📋 Bài 6 · Dataset v1</div>
+      <h2>Scenario Dataset v1 — Final (30+ rows)</h2>
+      <p class="lead">Dataset chốt cuối cùng của nhóm sau khi dedup, chuẩn hóa và bổ sung coverage. Dùng để chạy agent ở bước tiếp theo.</p>
+
+      <div class="callout">
+        <strong>Schema v1:</strong> scenario_id · source_owner · use_case · quality_question · dimension_values · user_input · expected_behavior · risk_if_fail · why_included · set_type · merge_decision
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="min-width:60px">ID</th>
+              <th style="min-width:80px">Owner</th>
+              <th style="min-width:160px">Dimension Values</th>
+              <th style="min-width:210px">User Input</th>
+              <th style="min-width:180px">Expected Behavior</th>
+              <th style="min-width:150px">Risk If Fail</th>
+              <th>Set Type</th>
+              <th>Merge</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="scenario-id">G01</span></td><td>Vũ HD</td><td>check_balance · full_info · low · casual</td><td><i>"Tháng này mình còn bao nhiêu tiền vậy?"</i></td><td>Hiển thị ngân sách còn lại ngay</td><td>Mất track tài chính nếu số liệu sai</td><td><span class="status representative">Repr.</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G02</span></td><td>Vũ HD</td><td>check_balance · full_info · low · mixed</td><td><i>"Budget tuần này mình dùng hết chưa?"</i></td><td>Hiển thị chi tiêu vs ngân sách tuần</td><td>User không biết thực tế ngân sách</td><td><span class="status representative">Repr.</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G03</span></td><td>Vũ HD</td><td>add_expense · full_info · medium · casual</td><td><i>"Mình vừa ăn bún bò 45k, ghi lại giúp mình"</i></td><td>Ghi nhận, xác nhận danh mục Ăn uống</td><td>Dữ liệu chi tiêu không đầy đủ</td><td><span class="status representative">Repr.</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G04</span></td><td>Vũ HD</td><td>add_expense · full_info · medium · mixed</td><td><i>"Add 120k grab bike từ nhà đến trường"</i></td><td>Ghi nhận 120k danh mục Đi lại</td><td>Danh mục sai → insight sai</td><td><span class="status representative">Repr.</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G05</span></td><td>Vũ HD</td><td>add_expense · missing_category · medium · casual</td><td><i>"Hôm nay mình xài 80k rồi đó, ghi lại đi"</i></td><td>Hỏi thêm danh mục, không tự đoán</td><td>Phân loại sai → báo cáo sai</td><td><span class="status challenge">Challenge</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G06</span></td><td>Vũ HD</td><td>add_expense · missing_category · medium · very_short</td><td><i>"Save 35k đi, mình mới trả tiền xong"</i></td><td>Hỏi thêm danh mục và tên giao dịch</td><td>Thêm giao dịch không phân loại được</td><td><span class="status challenge">Challenge</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G07</span></td><td>Vũ HD</td><td>edit_delete · full_info · high · casual</td><td><i>"Xóa giùm mình cái giao dịch mua trà sữa hôm qua"</i></td><td>Hỏi xác nhận trước khi xóa</td><td>Mất dữ liệu không phục hồi được</td><td><span class="status high-risk">High-risk</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G08</span></td><td>Vũ HD</td><td>edit_delete · full_info · high · casual</td><td><i>"Đổi cái 150k ăn uống hôm kia thành 50k giúp mình"</i></td><td>Xác nhận giao dịch, hỏi lại trước khi sửa</td><td>Sửa sai số tiền → mất track ngân sách</td><td><span class="status high-risk">High-risk</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G09</span></td><td>Vũ HD</td><td>budget_alert · ambiguous · medium · casual</td><td><i>"Cài cảnh báo ngân sách cho mình với"</i></td><td>Hỏi: danh mục nào, ngưỡng bao nhiêu?</td><td>Cảnh báo sai threshold → không có tác dụng</td><td><span class="status challenge">Challenge</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G10</span></td><td>Vũ HD</td><td>budget_alert · ambiguous · medium · casual</td><td><i>"Nhắc mình khi nào sắp hết tiền nhé"</i></td><td>Hỏi xác định ngưỡng trước khi thiết lập</td><td>Cảnh báo quá muộn → user đã hết tiền</td><td><span class="status challenge">Challenge</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G11</span></td><td>Vũ HD</td><td>ask_insight · full_info · low · formal</td><td><i>"Phân tích xem mình đang tiêu tiền nhiều nhất vào đâu?"</i></td><td>Top danh mục + ≥1 gợi ý actionable</td><td>Insight chung chung → user không thể hành động</td><td><span class="status representative">Repr.</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G12</span></td><td>Vũ HD</td><td>ask_insight · full_info · low · emotional</td><td><i>"Tháng này mình tiêu nhiều quá, giúp mình xem tiết kiệm chỗ nào được không?"</i></td><td>Nhận stress, phân tích top chi tiêu, đề xuất cắt giảm</td><td>Tone lạnh lùng → user cảm thấy bị phán xét</td><td><span class="status representative">Repr.</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G13</span></td><td>Vũ HD</td><td>check_balance · missing_time · low · very_short</td><td><i>"Mình còn tiền không?"</i></td><td>Hỏi: tháng này hay tuần này? Hoặc default tháng</td><td>Hiển thị sai kỳ → user ra quyết định sai</td><td><span class="status challenge">Challenge</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G14</span></td><td>Vũ HD</td><td>view_report · very_short · low · very_short</td><td><i>"Báo cáo"</i></td><td>Hiển thị báo cáo tổng quan tháng hiện tại</td><td>Không hiểu intent → user frustrated</td><td><span class="status representative">Repr.</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G15</span></td><td>Vũ HD</td><td>view_report · very_short · low · mixed</td><td><i>"Show report đi"</i></td><td>Hiển thị báo cáo ngay, không hỏi thêm</td><td>Không hiểu tiếng Anh → UX tệ với Gen Z</td><td><span class="status representative">Repr.</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G16</span></td><td>Vũ HD</td><td>add_expense · conflicting · high · formal</td><td><i>"Ghi giúp mình mua laptop 15 triệu hôm nay"</i></td><td>Cảnh báo vượt ngân sách, hỏi xác nhận</td><td>Ghi không cảnh báo → mất track hoàn toàn</td><td><span class="status high-risk">High-risk</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G17</span></td><td>Vũ HD</td><td>add_expense · conflicting · high · casual</td><td><i>"Mình vừa ăn trưa 50k, app báo hết tiền, ghi vào không?"</i></td><td>Ghi + cảnh báo ngân sách âm + đề xuất bước tiếp</td><td>Ghi mà không cảnh báo → user mất kiểm soát</td><td><span class="status high-risk">High-risk</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G18</span></td><td>Vũ HD</td><td>ask_insight · mixed_lang · low · mixed</td><td><i>"Spending habit của mình có gì bất thường không?"</i></td><td>Phân tích pattern + giải thích bằng tiếng Việt</td><td>Không hiểu mixed lang → mất user Gen Z</td><td><span class="status representative">Repr.</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G19</span></td><td>Vũ HD</td><td>edit_delete · ambiguous · high · very_short</td><td><i>"Sửa lại cái đó đi"</i></td><td>Hỏi: sửa giao dịch nào? Không tự đoán</td><td>Tự sửa sai → mất dữ liệu không phục hồi</td><td><span class="status high-risk">High-risk</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G20</span></td><td>Vũ HD</td><td>edit_delete · ambiguous · high · casual</td><td><i>"Cái hôm qua bị sai rồi, fix giúp mình"</i></td><td>Hỏi giao dịch nào hôm qua, sai ở đâu</td><td>Sửa nhầm giao dịch → mất tin tưởng</td><td><span class="status high-risk">High-risk</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G21</span></td><td>Vũ HD</td><td>budget_alert · emotional · medium · emotional</td><td><i>"Chết rồi, còn 4 ngày nữa mới nhận tiền mà hết tiền rồi!!"</i></td><td>Nhận stress, show số dư, đề xuất plan 4 ngày</td><td>Response lạnh → user bỏ app vì không được hỗ trợ</td><td><span class="status challenge">Challenge</span></td><td><span class="status kept">kept</span></td></tr>
+            <tr><td><span class="scenario-id">G22</span></td><td>Vũ HD</td><td>budget_alert · emotional · medium · emotional</td><td><i>"Sao tháng nào mình cũng hết tiền vậy, fix giúp mình đi"</i></td><td>Phân tích pattern dài hạn, đề xuất thay đổi thói quen</td><td>Chỉ trả lời tháng hiện tại → không giải quyết root cause</td><td><span class="status challenge">Challenge</span></td><td><span class="status kept">kept</span></td></tr>
+            <!-- Rows bổ sung từ group merge -->
+            <tr style="background:#f0fdf4">
+              <td><span class="scenario-id">G23</span></td>
+              <td>Group</td>
+              <td>multi_intent · full_info · medium · casual</td>
+              <td><i>"Mình vừa ăn 60k, tiện đây cho mình biết còn bao nhiêu luôn không?"</i></td>
+              <td>Ghi giao dịch + hiển thị ngân sách còn lại trong cùng 1 response</td>
+              <td>Xử lý được 1 intent, bỏ qua 1 → UX frustrating</td>
+              <td><span class="status representative">Repr.</span></td>
+              <td><span class="status rewritten">rewritten</span></td>
+            </tr>
+            <tr style="background:#f0fdf4">
+              <td><span class="scenario-id">G24</span></td>
+              <td>Group</td>
+              <td>multi_intent · ambiguous · high · emotional</td>
+              <td><i>"Hết tiền rồi, xóa cái giao dịch 500k đi rồi cho mình xem còn lại bao nhiêu"</i></td>
+              <td>Hỏi xác nhận xóa trước, sau đó mới show số dư — không tự xóa</td>
+              <td>Tự xóa rồi show sai số → mất dữ liệu + tin tưởng</td>
+              <td><span class="status high-risk">High-risk</span></td>
+              <td><span class="status rewritten">rewritten</span></td>
+            </tr>
+            <tr style="background:#f0fdf4">
+              <td><span class="scenario-id">G25</span></td>
+              <td>Group</td>
+              <td>check_balance · conflicting · low · casual</td>
+              <td><i>"App báo mình còn 200k nhưng ngân hàng báo còn 500k, cái nào đúng?"</i></td>
+              <td>Giải thích sự chênh lệch (giao dịch pending?), hướng dẫn kiểm tra</td>
+              <td>Không giải thích → user không tin app</td>
+              <td><span class="status challenge">Challenge</span></td>
+              <td><span class="status rewritten">rewritten</span></td>
+            </tr>
+            <tr style="background:#f0fdf4">
+              <td><span class="scenario-id">G26</span></td>
+              <td>Group</td>
+              <td>ask_insight · missing_category · low · casual</td>
+              <td><i>"Mình đang overspend ở chỗ nào nhất vậy?"</i></td>
+              <td>Tự tìm danh mục overspend nhất, không cần hỏi thêm</td>
+              <td>Hỏi lại không cần thiết → friction</td>
+              <td><span class="status representative">Repr.</span></td>
+              <td><span class="status rewritten">rewritten</span></td>
+            </tr>
+            <tr style="background:#fff7ed">
+              <td><span class="scenario-id">G27</span></td>
+              <td>TV2</td>
+              <td>add_expense · full_info · medium · formal</td>
+              <td><i>"Số dư tài khoản của tôi sau khi trả tiền thuê trọ 2.5 triệu hôm nay là bao nhiêu?"</i></td>
+              <td>Ghi 2.5tr tiền thuê trọ + tính toán số dư còn lại</td>
+              <td>Tính sai số dư → user mất niềm tin</td>
+              <td><span class="status representative">Repr.</span></td>
+              <td><span class="status kept">kept</span></td>
+            </tr>
+            <tr style="background:#fff7ed">
+              <td><span class="scenario-id">G28</span></td>
+              <td>TV2</td>
+              <td>view_report · missing_time · low · casual</td>
+              <td><i>"Báo cáo chi tiêu của mình dạo gần đây thế nào?"</i></td>
+              <td>Hỏi: gần đây là 7 ngày, 30 ngày? Hoặc show 30 ngày mặc định</td>
+              <td>Show sai kỳ → user không thấy insight đúng</td>
+              <td><span class="status challenge">Challenge</span></td>
+              <td><span class="status kept">kept</span></td>
+            </tr>
+            <tr style="background:#f5f3ff">
+              <td><span class="scenario-id">G29</span></td>
+              <td>TV3</td>
+              <td>budget_alert · full_info · medium · formal</td>
+              <td><i>"Thiết lập cảnh báo khi chi tiêu ăn uống vượt 1.5 triệu mỗi tháng"</i></td>
+              <td>Thiết lập alert với ngưỡng rõ ràng, xác nhận với user</td>
+              <td>Không thiết lập được → user không có cảnh báo kịp thời</td>
+              <td><span class="status representative">Repr.</span></td>
+              <td><span class="status kept">kept</span></td>
+            </tr>
+            <tr style="background:#f5f3ff">
+              <td><span class="scenario-id">G30</span></td>
+              <td>TV3</td>
+              <td>ask_insight · full_info · low · casual</td>
+              <td><i>"So sánh chi tiêu tháng này với tháng trước giúp mình với"</i></td>
+              <td>So sánh theo danh mục, highlight nơi tăng/giảm rõ nhất</td>
+              <td>So sánh không rõ → user không biết cần thay đổi gì</td>
+              <td><span class="status representative">Repr.</span></td>
+              <td><span class="status kept">kept</span></td>
+            </tr>
+            <tr style="background:#f5f3ff">
+              <td><span class="scenario-id">G31</span></td>
+              <td>Group</td>
+              <td>edit_delete · conflicting · high · emotional</td>
+              <td><i>"App ghi thiếu giao dịch của mình, sao mấy cái SMS không được đọc vậy?"</i></td>
+              <td>Giải thích lý do SMS không được nhận dạng, hướng dẫn add thủ công</td>
+              <td>Không hướng dẫn → user mất track, tức giận bỏ app</td>
+              <td><span class="status challenge">Challenge</span></td>
+              <td><span class="status rewritten">rewritten</span></td>
+            </tr>
+            <tr style="background:#fef2f2">
+              <td><span class="scenario-id">G32</span></td>
+              <td>Group</td>
+              <td>multi_intent · ambiguous · high · very_short</td>
+              <td><i>"Sửa đi rồi kiểm tra lại"</i></td>
+              <td>Hỏi rõ: sửa giao dịch nào? Kiểm tra gì? Không tự thực hiện</td>
+              <td>Tự đoán và thực hiện → mất dữ liệu không mong muốn</td>
+              <td><span class="status high-risk">High-risk</span></td>
+              <td><span class="status rewritten">rewritten</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid-4" style="margin-top:20px">
+        <div class="card tint-green" style="text-align:center">
+          <strong style="font-size:32px;color:var(--green)">32</strong>
+          <p class="small muted">Total rows trong Dataset v1</p>
+        </div>
+        <div class="card tint-green" style="text-align:center">
+          <strong style="font-size:32px;color:var(--green)">15</strong>
+          <p class="small muted">Representative cases</p>
+        </div>
+        <div class="card tint-yellow" style="text-align:center">
+          <strong style="font-size:32px;color:var(--yellow)">10</strong>
+          <p class="small muted">Challenge cases</p>
+        </div>
+        <div class="card tint-indigo" style="background:#fef2f2;text-align:center">
+          <strong style="font-size:32px;color:var(--red)">7</strong>
+          <p class="small muted">High-risk cases</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 11 ======================= -->
+    <section class="page" id="p11" data-phase="group">
+      <div class="eyebrow">🔍 Bài 6 · Coverage Review</div>
+      <h2>Group Coverage Review</h2>
+      <p class="lead">Nhóm trả lời ngắn các câu hỏi kiểm tra chất lượng dataset trước khi handoff để chạy agent.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Câu Hỏi</th><th>Trả Lời</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Dataset v1 đang cover tốt những slice nào?</b></td>
+              <td>
+                Cover tốt nhất: <span class="tag green">add_expense</span> (7 rows, đủ full/missing/conflicting) và <span class="tag green">edit_delete high-risk</span> (7 rows, đủ full/ambiguous/emotional). Các intent chính đều có representative và challenge cases.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Slice nào còn thiếu hoặc yếu?</b></td>
+              <td>
+                <span class="tag red">multi_intent</span> vẫn còn ít (3 rows — G23, G24, G32) dù đã bổ sung. <span class="tag yellow">conflicting info</span> có 3 rows nhưng chủ yếu tập trung vào add_expense — cần thêm conflicting ở check_balance và view_report.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Có đang over-sample happy path không?</b></td>
+              <td>
+                Sau dedup, full_info còn 13/32 rows (40%) — cao nhưng chấp nhận được vì cần đủ representative baseline. Đã cân bằng bằng cách thêm 4 rows conflicting và 3 rows multi_intent.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Có row nào high-risk nhưng chưa đủ rõ expected behavior?</b></td>
+              <td>
+                G24 ("Hết tiền rồi, xóa giao dịch đi rồi show số dư") cần làm rõ thêm: agent có nên xử lý cả 2 requests hay từ chối request 2 cho đến khi request 1 (xóa) được xác nhận? → Đã ghi chú trong handoff.
+              </td>
+            </tr>
+            <tr>
+              <td><b>AI generation đã làm sai hoặc bóp méo combination ở đâu?</b></td>
+              <td>
+                AI đã bóp méo 2 loại: (1) Tự thêm context đầy đủ vào inputs cần missing_time/missing_category → làm case quá dễ. (2) Dùng văn phong formal quá mức cho casual sinh viên. Đã loại 5 inputs và rewrite 4 inputs.
+              </td>
+            </tr>
+            <tr>
+              <td><b>Nếu chỉ được chạy agent trên batch nhỏ đầu tiên, nhóm chọn rows nào?</b></td>
+              <td>
+                Ưu tiên: G05 (add_expense + missing_category), G07 (delete + xác nhận), G13 (check_balance rất ngắn), G19 (ambiguous edit high-risk), G21 (emotional budget_alert), G23 (multi_intent), G25 (conflicting info). Đây là 7 rows test được nhiều failure mode nhất với ít resources nhất.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:20px">
+        <div class="callout green">
+          <strong>✅ Known Strengths:</strong> Dataset đủ diverse về input_style (very_short đến formal, casual, mixed lang, emotional). High-risk cases (7 rows) đều có clear expected behavior. Emotional inputs phản ánh đúng persona sinh viên stress tài chính.
+        </div>
+        <div class="callout orange">
+          <strong>⚠️ Known Gaps:</strong> Multi_intent vẫn thiếu; new user confusion (không biết app có tính năng gì) chưa có; SMS auto-import lỗi chỉ có 1 row (G31). Đây là priority bổ sung cho Dataset v2 sau khi chạy agent.
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 12 ======================= -->
+    <section class="page" id="p12" data-phase="group">
+      <div class="eyebrow">🚀 Bài 7 · Handoff</div>
+      <h2>Handoff Note — Chuẩn Bị Chạy Agent</h2>
+      <p class="lead">Tóm tắt những gì nhóm cần quan sát khi chạy agent, rows ưu tiên, và dự đoán failure patterns để chuẩn bị trace codes.</p>
+
+      <div class="card dark" style="margin-bottom:24px">
+        <h3>📋 Handoff Note</h3>
+        <p style="color:#cbd9e3; margin-top:12px; line-height:1.8">
+          Khi chạy agent, nhóm sẽ <strong style="color:#a5b4fc">ưu tiên batch đầu tiên là 7 rows high-risk và challenge</strong> (G05, G07, G13, G19, G21, G23, G25) vì đây là nơi agent BudgetBuddy AI dễ fail nhất và failure cost cao nhất — đặc biệt là các cases edit_delete ambiguous có thể gây mất dữ liệu không phục hồi.
+          <br><br>
+          Nhóm dự đoán <strong style="color:#a5b4fc">failure chính có thể ở 3 điểm</strong>: (1) <em>Wrong intent classification</em> với very_short inputs như "Sửa lại cái đó đi" và "Mình còn tiền không?"; (2) <em>Missing context not handled</em> khi agent tự đoán thay vì hỏi thêm cho G05, G06; (3) <em>Boundary violation</em> khi agent xóa/sửa mà không xác nhận trước (G07, G08, G19).
+          <br><br>
+          <strong style="color:#a5b4fc">Critical regression candidates</strong> cho các sprint sau: G07 (xóa giao dịch), G19 (edit ambiguous), G24 (multi_intent + delete) — nếu những rows này pass ban đầu nhưng fail sau khi update model/prompt thì đó là dấu hiệu regression nghiêm trọng.
+          <br><br>
+          Các tiêu chí có thể trở thành <strong style="color:#a5b4fc">trace codes</strong> sau khi đọc traces: <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px">intent_classified_correctly</code> · <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px">asked_for_missing_info</code> · <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px">confirmed_before_destructive_action</code> · <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px">tone_appropriate_for_emotional_input</code>
+        </p>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h3>🎯 Priority Batch 1 (Chạy Trước)</h3>
+          <div class="journey" style="margin-top:12px">
+            <div class="journey-row">
+              <div class="journey-dot" style="background:var(--red)">!</div>
+              <div>
+                <h4>G19: "Sửa lại cái đó đi"</h4>
+                <p>Ambiguous delete — failure = mất dữ liệu</p>
+              </div>
+              <span class="tag red">P0</span>
+            </div>
+            <div class="journey-row">
+              <div class="journey-dot" style="background:var(--red)">!</div>
+              <div>
+                <h4>G07: "Xóa cái trà sữa hôm qua"</h4>
+                <p>Clear delete — agent phải confirm trước</p>
+              </div>
+              <span class="tag red">P0</span>
+            </div>
+            <div class="journey-row">
+              <div class="journey-dot" style="background:var(--orange)">!</div>
+              <div>
+                <h4>G05: "Hôm nay xài 80k, ghi lại đi"</h4>
+                <p>Missing category — không được tự đoán</p>
+              </div>
+              <span class="tag orange">P1</span>
+            </div>
+            <div class="journey-row">
+              <div class="journey-dot" style="background:var(--orange)">!</div>
+              <div>
+                <h4>G13: "Mình còn tiền không?"</h4>
+                <p>Very short check_balance — NLU test</p>
+              </div>
+              <span class="tag orange">P1</span>
+            </div>
+            <div class="journey-row">
+              <div class="journey-dot" style="background:var(--yellow)">!</div>
+              <div>
+                <h4>G21: Stress emotional input</h4>
+                <p>Emotional budget_alert — tone test</p>
+              </div>
+              <span class="tag yellow">P2</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card tint-indigo">
+          <h3>📝 Dự Kiến Trace Codes</h3>
+          <div style="display:grid;gap:10px;margin-top:12px">
+            <div style="padding:12px;background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,0.06)">
+              <code style="color:var(--indigo);font-size:12px">intent_classified_correctly</code>
+              <p class="small muted" style="margin:4px 0 0">Pass nếu agent chọn đúng action type (view/add/edit/alert/insight)</p>
+            </div>
+            <div style="padding:12px;background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,0.06)">
+              <code style="color:var(--orange);font-size:12px">asked_for_missing_info</code>
+              <p class="small muted" style="margin:4px 0 0">Pass nếu agent hỏi thêm khi input thiếu context cần thiết</p>
+            </div>
+            <div style="padding:12px;background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,0.06)">
+              <code style="color:var(--red);font-size:12px">confirmed_before_destructive</code>
+              <p class="small muted" style="margin:4px 0 0">Pass nếu agent hỏi xác nhận trước bất kỳ hành động xóa/sửa</p>
+            </div>
+            <div style="padding:12px;background:#fff;border-radius:12px;border:1px solid rgba(0,0,0,0.06)">
+              <code style="color:var(--green);font-size:12px">tone_appropriate_emotional</code>
+              <p class="small muted" style="margin:4px 0 0">Pass nếu agent dùng tone empathetic với inputs stress/emotional</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= PAGE 13 ======================= -->
+    <section class="page" id="p13" data-phase="group">
+      <div class="eyebrow">✅ Kết Thúc · Rubric</div>
+      <h2>Rubric &amp; Checklist Nộp Bài</h2>
+      <p class="lead">Tự đánh giá theo rubric chấm nhanh của đề bài và checklist đảm bảo đủ output trước khi nộp.</p>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <h3>📊 Rubric Tự Chấm</h3>
+          <div style="background:#f8fafc;border-radius:16px;overflow:hidden;margin-top:12px">
+            <div class="rubric-item">
+              <div>
+                <b>Quality question cụ thể, không quá rộng</b>
+                <p class="small muted">QQ đã chỉ rõ: intent classification + boundary + context handling</p>
+              </div>
+              <div class="rubric-score">15</div>
+            </div>
+            <div class="rubric-item">
+              <div>
+                <b>Dimensions làm agent behavior thay đổi thật</b>
+                <p class="small muted">4 dimensions đều được kiểm tra và justified với behavior change</p>
+              </div>
+              <div class="rubric-score">20</div>
+            </div>
+            <div class="rubric-item">
+              <div>
+                <b>Combinations có lý do chọn rõ</b>
+                <p class="small muted">12 combinations với expected behavior và lý do đáng test rõ ràng</p>
+              </div>
+              <div class="rubric-score">20</div>
+            </div>
+            <div class="rubric-item">
+              <div>
+                <b>AI-generated inputs tự nhiên, giữ đúng coverage</b>
+                <p class="small muted">Đã filter 9/24 inputs, rewrite 4 — documented filter decisions</p>
+              </div>
+              <div class="rubric-score">15</div>
+            </div>
+            <div class="rubric-item">
+              <div>
+                <b>Scenario Dataset v0 cá nhân đủ rõ, usable</b>
+                <p class="small muted">24 inputs, map rõ về combination, đủ schema required</p>
+              </div>
+              <div class="rubric-score">10</div>
+            </div>
+            <div class="rubric-item">
+              <div>
+                <b>Group merge có dedup, chuẩn hóa và coverage review thật</b>
+                <p class="small muted">4 dimensions chuẩn hóa, 4 dedup decisions, coverage matrix đầy đủ</p>
+              </div>
+              <div class="rubric-score">15</div>
+            </div>
+            <div class="rubric-item">
+              <div>
+                <b>Handoff note chuẩn bị tốt cho bước chạy agent</b>
+                <p class="small muted">Priority batch, failure mode predictions, 4 trace code candidates</p>
+              </div>
+              <div class="rubric-score">5</div>
+            </div>
+            <div class="rubric-item" style="background:#f0fdf4">
+              <div><b>🏆 Tổng Điểm Ước Tính</b></div>
+              <div class="rubric-score" style="background:var(--green);font-size:22px;width:54px;height:54px">100</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>✅ Checklist Nộp Bài</h3>
+          <p class="small" style="color:var(--indigo);font-weight:800;margin-bottom:12px">CÁ NHÂN</p>
+          <ul style="list-style:none;padding:0;display:grid;gap:8px">
+            <li style="padding:9px 12px;background:#ecfdf5;border-radius:10px;font-size:13px">✅ Có use case từ Day 18/19 (BudgetBuddy AI)</li>
+            <li style="padding:9px 12px;background:#ecfdf5;border-radius:10px;font-size:13px">✅ Có Unit of AI Work rõ (một tin nhắn → agent phân loại + action)</li>
+            <li style="padding:9px 12px;background:#ecfdf5;border-radius:10px;font-size:13px">✅ Có một quality question cụ thể</li>
+            <li style="padding:9px 12px;background:#ecfdf5;border-radius:10px;font-size:13px">✅ Có 4 dimensions với values và lý do rõ</li>
+            <li style="padding:9px 12px;background:#ecfdf5;border-radius:10px;font-size:13px">✅ Có 12 scenarios/combinations với expected behavior</li>
+            <li style="padding:9px 12px;background:#ecfdf5;border-radius:10px;font-size:13px">✅ Có prompt đã dùng để generate inputs</li>
+            <li style="padding:9px 12px;background:#ecfdf5;border-radius:10px;font-size:13px">✅ Có 24 user inputs sau khi lọc (vượt yêu cầu 20)</li>
+            <li style="padding:9px 12px;background:#ecfdf5;border-radius:10px;font-size:13px">✅ Có Scenario Dataset v0 cá nhân đủ schema</li>
+            <li style="padding:9px 12px;background:#ecfdf5;border-radius:10px;font-size:13px">✅ Có coverage note cá nhân (gaps, high-risk, boundary)</li>
+          </ul>
+          <p class="small" style="color:var(--indigo);font-weight:800;margin:16px 0 12px">NHÓM</p>
+          <ul style="list-style:none;padding:0;display:grid;gap:8px">
+            <li style="padding:9px 12px;background:#ede9fe;border-radius:10px;font-size:13px">✅ Bảng chuẩn hóa 4 dimensions (từ 3 thành viên)</li>
+            <li style="padding:9px 12px;background:#ede9fe;border-radius:10px;font-size:13px">✅ Coverage matrix theo user_intent và context_completeness</li>
+            <li style="padding:9px 12px;background:#ede9fe;border-radius:10px;font-size:13px">✅ Danh sách 4 dedup/merge decisions</li>
+            <li style="padding:9px 12px;background:#ede9fe;border-radius:10px;font-size:13px">✅ Scenario Dataset v1 gồm 32 rows (vượt yêu cầu 30)</li>
+            <li style="padding:9px 12px;background:#ede9fe;border-radius:10px;font-size:13px">✅ Known gaps đã ghi rõ (multi_intent, new user, SMS lỗi)</li>
+            <li style="padding:9px 12px;background:#ede9fe;border-radius:10px;font-size:13px">✅ Handoff note với priority batch và trace code candidates</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-note" style="margin-top:24px">
+        <strong>📌 Nộp Bài:</strong> Mã HV: 2A202600632 · Họ Tên: Vũ Hải Dương · Đề tài: BudgetBuddy AI — Day 21 AI Eval Test Input Design · Folder: Day21-2A202600632-VuHaiDuong · Không có API key hoặc credential trong bài nộp.
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-button').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.getElementById('nav-' + id).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Keyboard navigation
+  const pages = ['p01','p02','p03','p04','p05','p06','p07','p08','p09','p10','p11','p12','p13'];
+  document.addEventListener('keydown', e => {
+    const active = document.querySelector('.page.active');
+    if (!active) return;
+    const idx = pages.indexOf(active.id);
+    if (e.key === 'ArrowRight' && idx < pages.length - 1) showPage(pages[idx + 1]);
+    if (e.key === 'ArrowLeft' && idx > 0) showPage(pages[idx - 1]);
+  });
+</script>
+</body>
+</html>
